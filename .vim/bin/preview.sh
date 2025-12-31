@@ -4,7 +4,6 @@ set -f
 FILE=$1
 LINE=$2
 
-# 如果文件名为空，直接退出，防止报错
 if [ -z "$FILE" ]; then
     exit 0
 fi
@@ -12,31 +11,26 @@ fi
 shift 2
 FULL_QUERY="$*"
 
-# 清洗引号
-CLEAN_QUERY=$(printf '%s' "$FULL_QUERY" | tr -d "'\"")
-LAST_WORD=$(printf '%s' "$CLEAN_QUERY" | awk '{print $NF}')
+# 1. 【关键修改】智能提取最后一个参数
+# 使用 eval set -- 重新解析参数字符串，这样能正确处理带引号的参数
+# "${!#}" 是 Bash 的黑魔法，表示获取最后一个参数
+eval set -- "$FULL_QUERY"
+LAST_ARG="${!#}"
 
-if [[ "$LAST_WORD" == -* ]] || [[ "$LAST_WORD" == *.* ]] || [[ -z "$LAST_WORD" ]]; then
+# 2. 过滤逻辑
+if [[ "$LAST_ARG" == -* ]] || [[ "$LAST_ARG" == *.* ]] || [[ -z "$LAST_ARG" ]]; then
     PATTERN=""
 else
-    PATTERN="$LAST_WORD"
+    PATTERN="$LAST_ARG"
 fi
 
-# ------------------------------------------------
-# 【优化显示】加粗前缀 + 分行显示
-# ------------------------------------------------
+# 3. UI 显示
 FILENAME=$(basename "$FILE")
 DIRNAME=$(dirname "$FILE")
-
-# 第一行：File: 文件名
-# \033[1m = 加粗, \033[32m = 绿色
 echo -e "\033[1mFile:\033[0m \033[1;32m$FILENAME\033[0m"
-
-# 第二行：Path: 路径
-# \033[1m = 加粗, \033[34m = 蓝色
 echo -e "\033[1mPath:\033[0m \033[34m$DIRNAME/\033[0m"
 
-# 执行预览
+# 4. 执行预览
 if [ -n "$PATTERN" ]; then
     rg --passthru \
        --pretty \
