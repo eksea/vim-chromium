@@ -143,6 +143,22 @@ nnoremap <C-p> :Files<CR>
 " Ctrl + F : 全局查找代码内容 (类似于 VSCode 的 Ctrl+Shift+F)
 nnoremap <C-f> :Rg<CR>
 
-nnoremap <C-b> :Buffers<CR>
+" 定义带有自定义预览的 Buffers 命令
+command! -bang Buffers
+  \ call fzf#vim#buffers(
+  \   {'options': [
+  \     '--preview', expand('~/github/vim-chromium/.vim/bin/preview-buffer.sh') . ' {}',
+  \     '--preview-window', 'right:50%:noborder:~2:+0'
+  \   ]},
+  \   <bang>0)
+
+" 注意上面倒数第三行：
+" 在 :~2 后面加了 :+0
+" :+0 的意思是：强制滚动到预览内容的顶部（第 0 行）。
+" 因为 bat 已经帮我们截取了目标行附近的内容，所以直接看顶部就是正确的行。
+" 定义带有自定义预览的 Buffers 命令
+
+" 映射 Ctrl+B 到这个新命令
+nnoremap <silent> <C-b> :Buffers<CR>
 
 
