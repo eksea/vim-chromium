@@ -74,8 +74,8 @@ let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
 " -----------------------------------------------------------------------------
 
 function! s:live_grep_handler(args)
-  let helper_script = '~/.vim/bin/rg-fzf.sh'
-  let preview_script = '~/.vim/bin/preview.sh'
+  let helper_script = '~/github/vim-chromium/.vim/bin/rg-fzf.sh'
+  let preview_script = '~/github/vim-chromium/.vim/bin/preview.sh'
 
   let spec = {}
   let spec.options = [
