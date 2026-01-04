@@ -69,7 +69,7 @@ let g:floaterm_height = 0.8      " 高度占 80%
 let g:floaterm_position = 'center' " 居中显示
 let g:floaterm_title = ' Terminal $1/$2 ' " 标题显示序号
 
-nnoremap <silent> <Leader>g :FloatermNew --name=lazygit --height=0.9 --width=0.9 --autoclose=2 lazygit<CR>
+nnoremap <silent> <Leader>g :FloatermNew --name=lazygit --height=0.95 --width=0.95 --autoclose=2 lazygit<CR>
 
 " ----------------------------------------------------------------
 " FZF 核心配置：使用 Ripgrep (rg) 作为后端
@@ -186,4 +186,8 @@ command! -bang Buffers
 " 映射 Ctrl+B 到这个新命令
 nnoremap <silent> <Leader>b :Buffers<CR>
 
+" === 强制解决退出时的 Job running 提示 ===
+" 使用 QuitPre 而不是 VimLeavePre，这通常能更早地拦截退出信号
+" silent! 表示如果出错也不要报错
+autocmd QuitPre * silent! FloatermKill!
 
