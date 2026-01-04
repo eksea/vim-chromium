@@ -25,6 +25,8 @@ Plug 'NLKNguyen/papercolor-theme'
 
 Plug 'tpope/vim-commentary'
 
+Plug 'voldikss/vim-floaterm'
+
 call plug#end()
 
 set shell=/bin/bash
@@ -45,6 +47,25 @@ xnoremap p "_dP
 vnoremap d "_d
 vnoremap c "_c
 vnoremap x "_x
+
+" === Floaterm 配置 ===
+
+" 设置快捷键
+" F12:       打开/隐藏 终端
+" Shift+F12: 新建一个终端窗口
+" Alt+n:     切换到下一个终端
+nnoremap   <silent> <F12>    :FloatermToggle<CR>
+tnoremap   <silent> <F12>    <C-\><C-n>:FloatermToggle<CR>
+nnoremap   <silent> <S-F12>  :FloatermNew<CR>
+tnoremap   <silent> <S-F12>  <C-\><C-n>:FloatermNew<CR>
+nnoremap   <silent> <M-n>    :FloatermNext<CR>
+tnoremap   <silent> <M-n>    <C-\><C-n>:FloatermNext<CR>
+
+" 窗口样式配置
+let g:floaterm_width = 0.8       " 宽度占 80%
+let g:floaterm_height = 0.8      " 高度占 80%
+let g:floaterm_position = 'center' " 居中显示
+let g:floaterm_title = ' Terminal $1/$2 ' " 标题显示序号
 
 " ----------------------------------------------------------------
 " FZF 核心配置：使用 Ripgrep (rg) 作为后端
