@@ -48,6 +48,8 @@ vnoremap d "_d
 vnoremap c "_c
 vnoremap x "_x
 
+let mapleader = " "
+
 " === Floaterm 配置 ===
 
 " 设置快捷键
@@ -66,6 +68,8 @@ let g:floaterm_width = 0.8       " 宽度占 80%
 let g:floaterm_height = 0.8      " 高度占 80%
 let g:floaterm_position = 'center' " 居中显示
 let g:floaterm_title = ' Terminal $1/$2 ' " 标题显示序号
+
+nnoremap <silent> <Leader>g :FloatermNew --name=lazygit --height=0.9 --width=0.9 --autoclose=2 lazygit<CR>
 
 " ----------------------------------------------------------------
 " FZF 核心配置：使用 Ripgrep (rg) 作为后端
@@ -158,11 +162,11 @@ command! -nargs=* Rg call s:live_grep_handler(<q-args>)
 " 快捷键映射 (按需修改)
 " ----------------------------------------------------------------
 
-" Ctrl + P : 查找文件 (类似于 VSCode)
-nnoremap <C-p> :Files<CR>
+" leader + o : 查找文件 (类似于 VSCode)
+nnoremap <Leader>o :Files<CR>
 
-" Ctrl + F : 全局查找代码内容 (类似于 VSCode 的 Ctrl+Shift+F)
-nnoremap <C-f> :Rg<CR>
+" leader + f : 全局查找代码内容 (类似于 VSCode 的 Ctrl+Shift+F)
+nnoremap <Leader>f :Rg<CR>
 
 " 定义带有自定义预览的 Buffers 命令
 command! -bang Buffers
@@ -180,6 +184,6 @@ command! -bang Buffers
 " 定义带有自定义预览的 Buffers 命令
 
 " 映射 Ctrl+B 到这个新命令
-nnoremap <silent> <C-b> :Buffers<CR>
+nnoremap <silent> <Leader>b :Buffers<CR>
 
 
