@@ -1,16 +1,32 @@
 -- ==========================================================================
--- 1. 基础设置 (Basic Options)
+-- 0. 核心预配置 (必须最先执行！)
 -- ==========================================================================
+-- [关键] Leader 键必须在所有插件和映射之前设置
 vim.g.mapleader = " "
-vim.opt.number = true
-vim.opt.cursorline = true
-vim.opt.clipboard = "unnamedplus" -- 使用系统剪切板
-vim.opt.termguicolors = true      -- 开启真彩色
-vim.opt.tabstop = 2
-vim.opt.softtabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.expandtab = true
-vim.opt.updatetime = 100          -- 提高响应速度
+vim.g.maplocalleader = " "
+
+-- [关键] 禁用 Netrw (防止与 nvim-tree 冲突)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+-- ==========================================================================
+-- 1. 基础设置 (Options)
+-- ==========================================================================
+local opt = vim.opt
+
+opt.number = true
+opt.cursorline = true
+opt.termguicolors = true
+opt.tabstop = 2
+opt.softtabstop = 2
+opt.shiftwidth = 2
+opt.expandtab = true
+opt.updatetime = 100
+
+-- [剪切板设置]
+-- Neovim 依赖外部工具 (xclip 或 wl-copy)
+-- 请确保终端运行了: sudo apt install xclip wl-clipboard
+opt.clipboard = "unnamedplus"
 
 -- 黑洞寄存器映射 (保留您的习惯)
 local keymap = vim.keymap.set
@@ -36,7 +52,7 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. 插件列表
 -- ==========================================================================
 require("lazy").setup({
-  -- [主题] PaperColor
+  -- [主题]
   {
     "NLKNguyen/papercolor-theme",
     priority = 1000,
@@ -46,50 +62,53 @@ require("lazy").setup({
     end,
   },
 
-  -- [状态栏] Lualine (轻量级)
+  -- [图标支持]
+  { "nvim-tree/nvim-web-devicons", lazy = true },
+
+  -- [文件管理器] Nvim-Tree
+  {
+    "nvim-tree/nvim-tree.lua",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("nvim-tree").setup({
+        sort_by = "case_sensitive",
+        view = { width = 30 },
+        renderer = { group_empty = true },
+        filters = { dotfiles = true },
+        git = { enable = true, timeout = 500 },
+        actions = { open_file = { quit_on_open = false } },
+      })
+      -- 快捷键: <Space>e
+      keymap("n", "<Leader>e", ":NvimTreeToggle<CR>", { silent = true })
+    end,
+  },
+
+  -- [状态栏]
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = true,
   },
 
-  -- [语法高亮] Treesitter (防崩溃版)
+  -- [语法高亮] Treesitter
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
     config = function()
-      -- 使用 pcall 保护：如果加载失败，不会导致 Neovim 崩溃
       local status, configs = pcall(require, "nvim-treesitter.configs")
-      if not status then
-        vim.notify("Treesitter 加载失败，将使用普通正则高亮", vim.log.levels.WARN)
-        return
-      end
-
+      if not status then return end
       configs.setup({
-        -- 确保安装常用语言
         ensure_installed = { "c", "cpp", "gn", "lua", "vim", "bash" },
-        -- 强制同步安装，避免网络问题导致的文件损坏
         sync_install = true,
-        -- 自动安装缺失的解析器
         auto_install = true,
-
-        highlight = {
-          enable = true,
-          additional_vim_regex_highlighting = false,
-        },
+        highlight = { enable = true, additional_vim_regex_highlighting = false },
       })
     end,
   },
 
   -- [FZF 核心]
-  {
-    "junegunn/fzf",
-    build = "./install --bin",
-  },
-  {
-    "junegunn/fzf.vim",
-    dependencies = { "junegunn/fzf" },
-  },
+  { "junegunn/fzf", build = "./install --bin" },
+  { "junegunn/fzf.vim", dependencies = { "junegunn/fzf" } },
 
   -- [终端] Vim-Floaterm
   {
@@ -99,14 +118,12 @@ require("lazy").setup({
       vim.g.floaterm_height = 0.8
       vim.g.floaterm_position = "center"
       vim.g.floaterm_title = " Terminal $1/$2 "
-
-      -- 解决退出报错
+      
       vim.api.nvim_create_autocmd("QuitPre", {
         pattern = "*",
         command = "silent! FloatermKill!"
       })
-
-      -- 快捷键映射
+      
       keymap("n", "<F12>", ":FloatermToggle<CR>", { silent = true })
       keymap("t", "<F12>", "<C-\\><C-n>:FloatermToggle<CR>", { silent = true })
       keymap("n", "<S-F12>", ":FloatermNew<CR>", { silent = true })
@@ -119,18 +136,14 @@ require("lazy").setup({
 })
 
 -- ==========================================================================
--- 4. 移植 FZF Vimscript 配置 (原样保留)
+-- 4. 移植 FZF Vimscript 配置
 -- ==========================================================================
 vim.cmd([[
-  " 1. FZF 基础命令
   let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
 
-  " 2. Live Grep Handler (保留您的脚本路径)
   function! s:live_grep_handler(args)
-    " 请确保这个路径在您的新系统上是正确的！
     let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
     let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
-
     let spec = {}
     let spec.options = [
       \ '--disabled',
@@ -140,13 +153,11 @@ vim.cmd([[
       \ '--preview-window', 'right:50%:noborder:noborder:~2',
       \ '--prompt', 'Rg> '
       \ ]
-
     call fzf#vim#grep('true', 1, spec, 0)
   endfunction
 
   command! -nargs=* Rg call s:live_grep_handler(<q-args>)
 
-  " 3. Buffers 命令
   command! -bang Buffers
     \ call fzf#vim#buffers(
     \   {'options': [
@@ -159,6 +170,7 @@ vim.cmd([[
 -- ==========================================================================
 -- 5. 快捷键映射
 -- ==========================================================================
+-- 这里的 <Leader> 现在肯定已经是空格了
 keymap("n", "<Leader>o", ":Files<CR>", { silent = true })
 keymap("n", "<Leader>f", ":Rg<CR>", { silent = true })
 keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true })
