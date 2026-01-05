@@ -136,8 +136,38 @@ require("lazy").setup({
   },
 
   -- [FZF 核心]
-  { "junegunn/fzf", build = "./install --bin" },
-  { "junegunn/fzf.vim", dependencies = { "junegunn/fzf" } },
+  {
+    'junegunn/fzf',
+    build = function() vim.fn['fzf#install']() end
+  },
+  {
+    'junegunn/fzf.vim',
+    config = function()
+      vim.env.FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
+
+      vim.cmd([[
+        function! s:live_grep_handler(args)
+          let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
+          let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
+          
+          let spec = {}
+          let spec.options = [
+            \ '--disabled',
+            \ '--query', a:args,
+            \ '--bind', 'change:reload:'.helper_script.' {q}',
+            \ '--preview', preview_script . ' {1} {2} {q}',
+            \ '--preview-window', 'right:50%:noborder:~2',
+            \ '--prompt', 'Rg> ',
+            \ '--delimiter', ':'
+            \ ]
+          
+          call fzf#vim#grep('true', 1, spec, 0)
+        endfunction
+        
+        command! -nargs=* Rg call s:live_grep_handler(<q-args>)
+      ]])
+    end
+  },
 
   -- [终端] Vim-Floaterm
   {
@@ -165,44 +195,6 @@ require("lazy").setup({
     end,
   },
 })
-
--- ==========================================================================
--- 4. 移植 FZF Vimscript 配置 (原样保留)
--- ==========================================================================
-vim.cmd([[
-  " 1. FZF 基础命令
-  let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
-
-  " 2. Live Grep Handler
-  function! s:live_grep_handler(args)
-    " 请确保以下路径在您的系统中是正确的！
-    let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
-    let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
-
-    let spec = {}
-    let spec.options = [
-      \ '--disabled',
-      \ '--query', a:args,
-      \ '--bind', 'change:reload:'.helper_script.' "{q}"',
-      \ '--preview', preview_script . ' {1} {2} "{q}"',
-      \ '--preview-window', 'right:50%:noborder:noborder:~2',
-      \ '--prompt', 'Rg> '
-      \ ]
-
-    call fzf#vim#grep('true', 1, spec, 0)
-  endfunction
-
-  command! -nargs=* Rg call s:live_grep_handler(<q-args>)
-
-  " 3. Buffers 命令 (带预览)
-  command! -bang Buffers
-    \ call fzf#vim#buffers(
-    \   {'options': [
-    \     '--preview', expand('~/github/vim-chromium/.vim/bin/preview-buffer.sh') . ' {}',
-    \     '--preview-window', 'right:50%:noborder:~2:+0'
-    \   ]},
-    \   <bang>0)
-]])
 
 -- ==========================================================================
 -- 5. 快捷键映射
