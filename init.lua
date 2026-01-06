@@ -294,9 +294,20 @@ require("lazy").setup({
         pattern = "*",
         command = "silent! FloatermKill!"
       })
+
+      keymap("t", "<Esc>", function()
+        -- 检查是否是 FZF 缓冲区
+        local bufname = vim.api.nvim_buf_get_name(0)
+        if bufname:match("^term://.*fzf") then
+          -- FZF 缓冲区：发送 Esc 给 FZF（关闭搜索）
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), 'n', true)
+        else
+          -- Floaterm 缓冲区：退出终端模式
+          vim.cmd('stopinsert')
+        end
+      end, { noremap = true })
       
       -- 快捷键映射 (F12 等)
-      keymap("t", "<Esc>", "<C-\\><C-n>", { desc = "退出终端模式" })
       keymap("n", "<Leader>t", ":FloatermToggle<CR>", { silent = true })
       keymap("n", "<F12>", ":FloatermToggle<CR>", { silent = true })
       keymap("t", "<F12>", "<C-\\><C-n>:FloatermToggle<CR>", { silent = true })
@@ -332,7 +343,8 @@ require("lazy").setup({
 -- ==========================================================================
 -- FZF 快捷键
 keymap("n", "<Leader>o", ":Files<CR>", { silent = true, desc = "查找文件" })
-keymap("n", "<Leader>f", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
+-- <Leader>f存在组合，导致搜索面板呼出太慢，改成<Leader>s
+keymap("n", "<Leader>s", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
 keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
 
 -- 窗口导航快捷键（通用）
