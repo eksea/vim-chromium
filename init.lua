@@ -306,3 +306,53 @@ keymap("n", "<C-k>", "<C-w>k", { desc = "切换到上窗口" })
 --   git mergetool                # 解决合并冲突
 -- ==========================================================================
 
+-- 智能路径获取函数
+local function get_current_filepath()
+  local filetype = vim.bo.filetype
+  if filetype == "NvimTree" then
+    local ok, api = pcall(require, 'nvim-tree.api')
+    if ok then
+      local node = api.tree.get_node_under_cursor()
+      if node then return node.absolute_path end
+    end
+  end
+  local filepath = vim.fn.expand('%:p')
+  if filepath == "" or filepath:match("^term://") then return nil end
+  return filepath
+end
+
+-- 路径操作快捷键
+keymap("n", "<Leader>fp", function()
+  local filepath = get_current_filepath()
+  if not filepath then print('⚠ 当前无有效文件') return end
+  vim.fn.setreg('+', filepath)
+  print('✓ 完整路径已复制: ' .. filepath)
+end, { desc = "复制完整路径" })
+
+keymap("n", "<Leader>fr", function()
+  local filepath = get_current_filepath()
+  if not filepath then print('⚠ 当前无有效文件') return end
+  local cwd = vim.fn.getcwd()
+  local relative_path = filepath
+  if filepath:sub(1, #cwd) == cwd then
+    relative_path = filepath:sub(#cwd + 2)
+  end
+  vim.fn.setreg('+', relative_path)
+  print('✓ 相对路径已复制: ' .. relative_path)
+end, { desc = "复制相对路径" })
+
+keymap("n", "<Leader>fn", function()
+  local filepath = get_current_filepath()
+  if not filepath then print('⚠ 当前无有效文件') return end
+  local filename = vim.fn.fnamemodify(filepath, ':t')
+  vim.fn.setreg('+', filename)
+  print('✓ 文件名已复制: ' .. filename)
+end, { desc = "复制文件名" })
+
+keymap("n", "<Leader>fd", function()
+  local filepath = get_current_filepath()
+  if not filepath then print('⚠ 当前无有效文件') return end
+  local dirpath = vim.fn.fnamemodify(filepath, ':h')
+  vim.fn.setreg('+', dirpath)
+  print('✓ 目录路径已复制: ' .. dirpath)
+end, { desc = "复制目录路径" })
