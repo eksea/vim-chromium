@@ -306,7 +306,3 @@ keymap("n", "<C-k>", "<C-w>k", { desc = "切换到上窗口" })
 --   git mergetool                # 解决合并冲突
 -- ==========================================================================
 
-print("✓ Neovim 配置加载完成！")
-print("  - 使用 :checkhealth 检查环境")
-print("  - Diff 快捷键: <Leader>1/2/3 (三方合并)")
-print("  - FZF 搜索: <Leader>o (文件) / <Leader>f (内容)")
