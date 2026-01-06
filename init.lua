@@ -19,6 +19,7 @@ opt.number = true
 opt.cursorline = true
 opt.termguicolors = true -- 开启真彩色支持
 opt.background = "dark"
+opt.relativenumber = true
 
 -- 缩进设置 (Chromium 标准: 2空格)
 opt.tabstop = 2
