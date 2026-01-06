@@ -331,6 +331,104 @@ require("lazy").setup({
     },
   },
 
+  -- 在 require("lazy").setup({ 中添加
+
+  -- [Git 状态显示] Gitsigns
+  {
+    'lewis6991/gitsigns.nvim',
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require('gitsigns').setup({
+        signs = {
+          add          = { text = '│' },  -- 新增行
+          change       = { text = '│' },  -- 修改行
+          delete       = { text = '_' },  -- 删除行
+          topdelete    = { text = '‾' },  -- 顶部删除
+          changedelete = { text = '~' },  -- 修改并删除
+          untracked    = { text = '┆' },  -- 未跟踪
+        },
+        signcolumn = true,  -- 在行号旁显示标记
+        numhl      = false, -- 高亮行号
+        linehl     = false, -- 高亮整行
+        word_diff  = false, -- 单词级别的 diff
+        
+        current_line_blame = true,  -- 显示当前行的 blame 信息
+        current_line_blame_opts = {
+          virt_text = true,
+          virt_text_pos = 'eol',  -- 在行尾显示
+          delay = 500,            -- 延迟 500ms 显示
+          ignore_whitespace = false,
+        },
+        current_line_blame_formatter = '<author>, <author_time:%Y-%m-%d> - <summary>',
+        
+        on_attach = function(bufnr)
+          local gs = package.loaded.gitsigns
+          
+          local function map(mode, l, r, opts)
+            opts = opts or {}
+            opts.buffer = bufnr
+            vim.keymap.set(mode, l, r, opts)
+          end
+          
+          -- 导航到上一个/下一个修改
+          map('n', ']c', function()
+            if vim.wo.diff then return ']c' end
+            vim.schedule(function() gs.next_hunk() end)
+            return '<Ignore>'
+          end, {expr=true, desc = '下一个修改'})
+          
+          map('n', '[c', function()
+            if vim.wo.diff then return '[c' end
+            vim.schedule(function() gs.prev_hunk() end)
+            return '<Ignore>'
+          end, {expr=true, desc = '上一个修改'})
+          
+          -- 暂存/撤销修改
+          map('n', '<Leader>hs', gs.stage_hunk, { desc = '暂存当前修改' })
+          map('n', '<Leader>hr', gs.reset_hunk, { desc = '撤销当前修改' })
+          map('v', '<Leader>hs', function() gs.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end, { desc = '暂存选中修改' })
+          map('v', '<Leader>hr', function() gs.reset_hunk {vim.fn.line('.'), vim.fn.line('v')} end, { desc = '撤销选中修改' })
+          
+          map('n', '<Leader>hS', gs.stage_buffer, { desc = '暂存整个文件' })
+          map('n', '<Leader>hu', gs.undo_stage_hunk, { desc = '撤销暂存' })
+          map('n', '<Leader>hR', gs.reset_buffer, { desc = '重置整个文件' })
+          
+          -- 预览修改
+          map('n', '<Leader>hp', gs.preview_hunk, { desc = '预览修改' })
+          
+          -- Blame
+          map('n', '<Leader>hb', function() gs.blame_line{full=true} end, { desc = '显示完整 blame' })
+          map('n', '<Leader>tb', gs.toggle_current_line_blame, { desc = '切换行内 blame' })
+          
+          -- Diff
+          map('n', '<Leader>hd', gs.diffthis, { desc = 'Diff 当前文件' })
+          map('n', '<Leader>hD', function() gs.diffthis('~') end, { desc = 'Diff HEAD' })
+          
+          -- 文本对象
+          map({'o', 'x'}, 'ih', ':<C-U>Gitsigns select_hunk<CR>', { desc = '选择修改块' })
+        end
+      })
+    vim.cmd([[
+      " 新增行（绿色）
+      highlight GitSignsAdd guifg=#1a7f37 guibg=NONE
+      
+      " 修改行（黄色）
+      highlight GitSignsChange guifg=#fabd2f guibg=NONE
+      
+      " 删除行（红色）
+      highlight GitSignsDelete guifg=#fb4934 guibg=NONE
+      
+      " 行号高亮
+      highlight GitSignsAddNr guifg=#b8bb26
+      highlight GitSignsChangeNr guifg=#fabd2f
+      highlight GitSignsDeleteNr guifg=#fb4934
+      
+      " 行内 blame（灰色，不显眼）
+      highlight GitSignsCurrentLineBlame guifg=#7c6f64 gui=italic
+    ]])
+    end,
+  },
+
   -- [注释] Commentary
   { 'tpope/vim-commentary' },
 
