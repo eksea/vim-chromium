@@ -247,6 +247,8 @@ require("lazy").setup({
       })
       
       -- 快捷键映射 (F12 等)
+      keymap("t", "<Esc>", "<C-\\><C-n>", { desc = "退出终端模式" })
+      keymap("n", "<Leader>t", ":FloatermToggle<CR>", { silent = true })
       keymap("n", "<F12>", ":FloatermToggle<CR>", { silent = true })
       keymap("t", "<F12>", "<C-\\><C-n>:FloatermToggle<CR>", { silent = true })
       keymap("n", "<S-F12>", ":FloatermNew<CR>", { silent = true })
