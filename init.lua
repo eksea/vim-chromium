@@ -31,7 +31,59 @@ opt.expandtab = true
 opt.updatetime = 100          -- 提高响应速度
 opt.clipboard = "unnamedplus" -- 使用系统剪切板 (需安装 xclip 或 wl-clipboard)
 
--- 黑洞寄存器映射 (保留您的习惯：粘贴/删除不覆盖剪切板)
+-- ==========================================================================
+-- 1.5 Vimdiff 配置
+-- ==========================================================================
+-- Diff 选项配置
+opt.diffopt:append({
+  'vertical',           -- 垂直分屏显示
+  'algorithm:patience', -- 更智能的 diff 算法
+  'indent-heuristic',   -- 更好的缩进对齐
+  'context:5',          -- 显示 5 行上下文
+  'foldcolumn:1',       -- 显示折叠列
+  -- 'iwhite',          -- 忽略空白字符差异（按需启用）
+})
+
+-- Diff 颜色配置（更清晰的视觉效果）
+vim.cmd([[
+  highlight DiffAdd    cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=#b8bb26 guibg=#3c3836
+  highlight DiffDelete cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=#fb4934 guibg=#3c3836
+  highlight DiffChange cterm=bold ctermfg=10 ctermbg=17 gui=none guifg=#fabd2f guibg=#3c3836
+  highlight DiffText   cterm=bold ctermfg=10 ctermbg=88 gui=none guifg=#fe8019 guibg=#504945 gui=bold
+]])
+
+-- Diff 模式自动配置
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function()
+    if vim.o.diff then
+      local map = vim.keymap.set
+      
+      -- 三方合并快捷键（Git 冲突解决）
+      map('n', '<Leader>1', ':diffget LOCAL<CR>:diffupdate<CR>', { desc = '采用 LOCAL (当前分支)', silent = true })
+      map('n', '<Leader>2', ':diffget BASE<CR>:diffupdate<CR>', { desc = '采用 BASE (共同祖先)', silent = true })
+      map('n', '<Leader>3', ':diffget REMOTE<CR>:diffupdate<CR>', { desc = '采用 REMOTE (合并分支)', silent = true })
+      
+      -- 快速导航（跳转到差异并居中）
+      map('n', '<C-j>', ']czz', { desc = '下一个差异', silent = true })
+      map('n', '<C-k>', '[czz', { desc = '上一个差异', silent = true })
+      
+      -- 实用操作
+      map('n', '<Leader>u', ':diffupdate<CR>', { desc = '刷新 diff', silent = true })
+      map('n', '<Leader>do', ':diffoff!<CR>', { desc = '关闭 diff 模式', silent = true })
+      map('n', '<Leader>q', ':qa<CR>', { desc = '退出所有窗口', silent = true })
+      
+      -- 窗口切换
+      map('n', '<Leader>h', '<C-w>h', { desc = '切换到左窗口', silent = true })
+      map('n', '<Leader>l', '<C-w>l', { desc = '切换到右窗口', silent = true })
+      
+      print('✓ Diff 模式已激活！使用 <Leader>1/2/3 进行三方合并')
+    end
+  end
+})
+
+-- ==========================================================================
+-- 2. 黑洞寄存器映射 (保留您的习惯：粘贴/删除不覆盖剪切板)
+-- ==========================================================================
 local keymap = vim.keymap.set
 keymap("x", "p", '"_dP')
 keymap("v", "d", '"_d')
@@ -39,7 +91,7 @@ keymap("v", "c", '"_c')
 keymap("v", "x", '"_x')
 
 -- ==========================================================================
--- 2. 插件管理器 Lazy.nvim 引导
+-- 3. 插件管理器 Lazy.nvim 引导
 -- ==========================================================================
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -52,7 +104,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- ==========================================================================
--- 3. 插件列表与配置
+-- 4. 插件列表与配置
 -- ==========================================================================
 require("lazy").setup({
   -- [主题] PaperColor
@@ -166,6 +218,15 @@ require("lazy").setup({
         endfunction
         
         command! -nargs=* Rg call s:live_grep_handler(<q-args>)
+        
+        " Buffers 命令（带预览）
+        command! -bang Buffers
+          \ call fzf#vim#buffers(
+          \   {'options': [
+          \     '--preview', expand('~/github/vim-chromium/.vim/bin/preview-buffer.sh') . ' {}',
+          \     '--preview-window', 'right:50%:noborder:~2:+0'
+          \   ]},
+          \   <bang>0)
       ]])
     end
   },
@@ -195,12 +256,57 @@ require("lazy").setup({
       keymap("n", "<Leader>g", ":FloatermNew --name=lazygit --height=0.95 --width=0.95 --autoclose=2 lazygit<CR>", { silent = true })
     end,
   },
+
+  -- [Git 集成] Vim-Fugitive（增强 Git 操作）
+  {
+    'tpope/vim-fugitive',
+    cmd = { 'Git', 'Gdiffsplit', 'Gvdiffsplit' },
+    keys = {
+      { '<Leader>gs', ':Git<CR>', desc = 'Git status' },
+      { '<Leader>gd', ':Gvdiffsplit<CR>', desc = 'Git diff (垂直分屏)' },
+      { '<Leader>gb', ':Git blame<CR>', desc = 'Git blame' },
+      { '<Leader>gl', ':Gclog<CR>', desc = 'Git log' },
+    },
+  },
+
+  -- [注释] Commentary
+  { 'tpope/vim-commentary' },
+
+  -- [GN 语法支持]
+  { 'kalcutter/vim-gn' },
 })
 
 -- ==========================================================================
 -- 5. 快捷键映射
 -- ==========================================================================
 -- FZF 快捷键
-keymap("n", "<Leader>o", ":Files<CR>", { silent = true })
-keymap("n", "<Leader>f", ":Rg<CR>", { silent = true })
-keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true })
+keymap("n", "<Leader>o", ":Files<CR>", { silent = true, desc = "查找文件" })
+keymap("n", "<Leader>f", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
+keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
+
+-- 窗口导航快捷键（通用）
+keymap("n", "<C-h>", "<C-w>h", { desc = "切换到左窗口" })
+keymap("n", "<C-l>", "<C-w>l", { desc = "切换到右窗口" })
+keymap("n", "<C-j>", "<C-w>j", { desc = "切换到下窗口" })
+keymap("n", "<C-k>", "<C-w>k", { desc = "切换到上窗口" })
+
+-- ==========================================================================
+-- 6. Git 配置提示（首次使用需要配置）
+-- ==========================================================================
+-- 运行以下命令配置 Git 使用 Neovim 作为 diff 和 merge 工具：
+--
+-- git config --global diff.tool nvimdiff
+-- git config --global difftool.nvimdiff.cmd 'nvim -d "$LOCAL" "$REMOTE"'
+-- git config --global merge.tool nvimdiff
+-- git config --global mergetool.nvimdiff.cmd 'nvim -d "$LOCAL" "$BASE" "$REMOTE" "$MERGED" -c "wincmd J"'
+-- git config --global mergetool.prompt false
+--
+-- 使用方法：
+--   git difftool file.cpp        # 查看文件差异
+--   git mergetool                # 解决合并冲突
+-- ==========================================================================
+
+print("✓ Neovim 配置加载完成！")
+print("  - 使用 :checkhealth 检查环境")
+print("  - Diff 快捷键: <Leader>1/2/3 (三方合并)")
+print("  - FZF 搜索: <Leader>o (文件) / <Leader>f (内容)")
