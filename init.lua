@@ -124,11 +124,38 @@ require("lazy").setup({
     "nvim-tree/nvim-tree.lua",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
+      -- 宽度持久化
+      local width_file = vim.fn.stdpath('data') .. '/nvim-tree-width.txt'
+
+      -- 读取宽度
+      local function load_width()
+        local file = io.open(width_file, 'r')
+        if file then
+          local width = tonumber(file:read('*l'))
+          file:close()
+          return width or 30
+        end
+        return 30
+      end
+
+      local function save_width(width)
+        local file = io.open(width_file, 'w')
+        if file then
+          file:write(tostring(width))
+          file:close()
+        else
+          print('[DEBUG] ✗ 无法打开文件写入')
+        end
+      end
+
+      local initial_width = load_width()
+
       require("nvim-tree").setup({
         sort_by = "case_sensitive",
         view = {
-          width = 30,
+          width = initial_width,
           side = "left",
+          preserve_window_proportions = true,
         },
         renderer = {
           group_empty = true, -- 自动折叠空目录
@@ -149,8 +176,30 @@ require("lazy").setup({
         actions = {
           open_file = {
             quit_on_open = false, -- 打开文件后不关闭侧边栏
+            resize_window = false,
           },
         },
+      })
+
+      -- 自动保存宽度
+      vim.api.nvim_create_autocmd('WinResized', {
+        callback = function()
+          print('[DEBUG] WinResized 事件触发')
+          if vim.bo.filetype == 'NvimTree' then
+            save_width(vim.api.nvim_win_get_width(0))
+          end
+        end
+      })
+      
+      vim.api.nvim_create_autocmd('VimLeavePre', {
+        callback = function()
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.api.nvim_buf_get_option(vim.api.nvim_win_get_buf(win), 'filetype') == 'NvimTree' then
+              save_width(vim.api.nvim_win_get_width(win))
+              break
+            end
+          end
+        end
       })
       
       -- 快捷键: <Space>e 打开/关闭文件树
