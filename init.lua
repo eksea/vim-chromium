@@ -435,6 +435,58 @@ require("lazy").setup({
     end,
   },
 
+  -- [Markdown 预览]
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    ft = { "markdown" },
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    keys = {
+      { "<Leader>m", "<cmd>MarkdownPreviewToggle<cr>", desc = "Markdown 预览" },
+    },
+    config = function()
+      -- 设置浏览器（可选）
+      -- vim.g.mkdp_browser = 'chrome'  -- 或 'firefox', 'safari'
+      
+      -- 预览服务器配置
+      vim.g.mkdp_auto_start = 0          -- 打开 markdown 文件时不自动预览
+      vim.g.mkdp_auto_close = 1          -- 关闭 buffer 时自动关闭预览
+      vim.g.mkdp_refresh_slow = 0        -- 实时刷新（0=快速，1=保存时刷新）
+      vim.g.mkdp_command_for_global = 0  -- 只在 markdown 文件中可用
+      vim.g.mkdp_open_to_the_world = 0   -- 只允许本地访问
+      
+      -- 预览选项
+      vim.g.mkdp_preview_options = {
+        mkit = {},
+        katex = {},
+        uml = {},
+        maid = {},
+        disable_sync_scroll = 0,         -- 同步滚动
+        sync_scroll_type = 'middle',     -- 滚动位置
+        hide_yaml_meta = 1,              -- 隐藏 YAML 元数据
+        sequence_diagrams = {},
+        flowchart_diagrams = {},
+        content_editable = false,        -- 预览内容不可编辑
+        disable_filename = 0,            -- 显示文件名
+        toc = {}
+      }
+      
+      -- 主题：github（默认）或 dark
+      vim.g.mkdp_theme = 'dark'
+      
+      -- 自定义端口（可选）
+      -- vim.g.mkdp_port = '8080'
+      
+      -- 预览页面标题
+      vim.g.mkdp_page_title = '「${name}」'
+      
+      -- 识别的文件类型
+      vim.g.mkdp_filetypes = { "markdown" }
+    end,
+  },
+
   -- [注释] Commentary
   { 'tpope/vim-commentary' },
 

@@ -87,16 +87,12 @@ mv ~/.config/nvim ~/.config/nvim.backup
 mv ~/.local/share/nvim ~/.local/share/nvim.backup
 
 # 2. 克隆本仓库
-git clone https://github.com/YOUR_USERNAME/nvim-config.git ~/.config/nvim
+git clone https://github.com/eksea/vim-chromium ~/.config/nvim
 
-# 3. 创建脚本目录并复制脚本
-mkdir -p ~/.config/nvim/bin
-cp ~/.config/nvim/scripts/* ~/.config/nvim/bin/
-
-# 4. 赋予脚本执行权限
+# 3. 赋予脚本执行权限
 chmod +x ~/.config/nvim/bin/*.sh
 
-# 5. 启动 Neovim（自动安装插件）
+# 4. 启动 Neovim（自动安装插件）
 nvim
 ```
 
@@ -112,13 +108,6 @@ nvim
 
 -- 修改为
 ~/.config/nvim/bin/
-```
-
-或者使用以下命令自动替换：
-
-```bash
-cd ~/.config/nvim
-sed -i 's|~/github/vim-chromium/.vim/bin/|~/.config/nvim/bin/|g' init.lua
 ```
 
 ### 4. 配置 Git（可选但推荐）
@@ -205,6 +194,12 @@ git config --global mergetool.keepBackup false
 | `gcc` | 注释/取消注释当前行 |
 | `gc` + 动作 | 注释（如 `gc3j` 注释 3 行） |
 
+### Markdown
+
+| 快捷键 | 功能 |
+|--------|------|
+| `<Space>m` | 切换 Markdown 预览 |
+
 ## 📂 文件结构
 
 ```
@@ -275,6 +270,7 @@ opt.shiftwidth = 2     -- 改为 4
 | [vim-floaterm](https://github.com/voldikss/vim-floaterm) | 浮动终端 |
 | [vim-commentary](https://github.com/tpope/vim-commentary) | 快速注释 |
 | [papercolor-theme](https://github.com/NLKNguyen/papercolor-theme) | 主题 |
+| [markdown-preview.nvim](https://github.com/iamcco/markdown-preview.nvim) | Markdown 实时预览 |
 
 ## 🐛 故障排除
 
