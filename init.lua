@@ -486,6 +486,44 @@ require("lazy").setup({
       vim.g.mkdp_filetypes = { "markdown" }
     end,
   },
+  -- [平滑滚动]
+  {
+    "karb94/neoscroll.nvim",
+    event = "VeryLazy",
+    config = function()
+      require('neoscroll').setup({
+        -- 滚动动画时间（毫秒）
+        mappings = {
+          '<C-u>', '<C-d>',      -- 半页滚动
+          '<C-b>', '<C-f>',      -- 整页滚动
+          '<C-y>', '<C-e>',      -- 单行滚动
+          'zt', 'zz', 'zb',      -- 重新定位
+        },
+        hide_cursor = true,          -- 滚动时隐藏光标
+        stop_eof = true,             -- 到达文件末尾时停止
+        respect_scrolloff = false,   -- 不受 scrolloff 影响
+        cursor_scrolls_alone = true, -- 光标独立滚动
+        easing_function = "sine",    -- 缓动函数: sine, circular, quadratic
+        pre_hook = nil,
+        post_hook = nil,
+        performance_mode = false,    -- 大文件性能模式
+      })
+
+      -- 自定义滚动速度
+      local t = {}
+      t['<C-u>'] = {'scroll', {'-vim.wo.scroll', 'true', '150'}}  -- 向上半页，150ms
+      t['<C-d>'] = {'scroll', { 'vim.wo.scroll', 'true', '150'}}  -- 向下半页，150ms
+      t['<C-b>'] = {'scroll', {'-vim.api.nvim_win_get_height(0)', 'true', '250'}}  -- 向上整页
+      t['<C-f>'] = {'scroll', { 'vim.api.nvim_win_get_height(0)', 'true', '250'}}  -- 向下整页
+      t['<C-y>'] = {'scroll', {'-0.10', 'false', '100'}}  -- 向上滚动 10%
+      t['<C-e>'] = {'scroll', { '0.10', 'false', '100'}}  -- 向下滚动 10%
+      t['zt']    = {'zt', {'150'}}
+      t['zz']    = {'zz', {'150'}}
+      t['zb']    = {'zb', {'150'}}
+
+      require('neoscroll.config').set_mappings(t)
+    end,
+  },
 
   -- [注释] Commentary
   { 'tpope/vim-commentary' },
