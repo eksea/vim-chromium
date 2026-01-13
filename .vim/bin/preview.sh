@@ -13,15 +13,14 @@ fi
 shift 2
 FULL_QUERY="$*"
 
-# 2. 检测 -F 参数（固定字符串模式）
+# 2. 检测 -F 参数
 FIXED_STRING=0
 if [[ "$FULL_QUERY" =~ -F ]]; then
     FIXED_STRING=1
-    # 移除 -F 参数
     FULL_QUERY=${FULL_QUERY//-F/}
 fi
 
-# 3. 移除 -g 参数（文件过滤）
+# 3. 移除 -g 参数
 if [[ "$FULL_QUERY" =~ -g[[:space:]]+([^[:space:]]+) ]]; then
     glob="${BASH_REMATCH[1]}"
     FULL_QUERY=${FULL_QUERY//-g $glob/}
@@ -31,18 +30,27 @@ fi
 # 清理首尾空格
 FULL_QUERY=$(echo "$FULL_QUERY" | xargs)
 
-# 4. 智能提取搜索词
+# 4. 智能提取搜索词（改进版）
 eval set -- "$FULL_QUERY"
 LAST_ARG="${!#}"
 
-# 如果最后一个词看起来像参数或文件名，则认为没有搜索词
-if [[ "$LAST_ARG" == -* ]] || [[ "$LAST_ARG" == *.* ]] || [[ -z "$LAST_ARG" ]]; then
+# 【关键修复】更精确的过滤逻辑
+# 只过滤明显的参数和通配符模式，不过滤普通的点号字符串
+if [[ "$LAST_ARG" == -* ]]; then
+    # 以 - 开头的是参数
+    PATTERN=""
+elif [[ "$LAST_ARG" =~ ^\*\. ]] || [[ "$LAST_ARG" =~ \.\*$ ]]; then
+    # 匹配 *.cc 或 *.* 这样的通配符模式
+    PATTERN=""
+elif [[ -z "$LAST_ARG" ]]; then
+    # 空字符串
     PATTERN=""
 else
+    # 其他情况都认为是有效的搜索词（包括 ew.sh, com.android.webview）
     PATTERN="$LAST_ARG"
 fi
 
-# 5. 【UI 优化】打印文件信息
+# 5. 打印文件信息
 FILENAME=$(basename "$FILE")
 DIRNAME=$(dirname "$FILE")
 echo -e "\033[1mFile:\033[0m \033[1;32m$FILENAME\033[0m"
@@ -52,35 +60,23 @@ echo -e "\033[1mPath:\033[0m \033[34m$DIRNAME/\033[0m"
 if [ -n "$PATTERN" ]; then
     # 【有搜索词】使用 rg 高亮
     
-    # 6.1 构建基础参数数组
-    RG_CMD=(
-        rg
-        --context 999              # 显示大量上下文（几乎整个文件）
-        --pretty                   # 美化输出
-        --colors 'match:bg:red'
-        --colors 'match:fg:white'
-        --colors 'match:style:bold'
-    )
-    
-    # 6.2 处理固定字符串模式
+    # 构建基础命令
     if [ "$FIXED_STRING" -eq 1 ]; then
-        RG_CMD+=(-F)  # 添加 -F 参数
-    fi
-    
-    # 6.3 智能大小写（Smart Case）
-    if [[ "$PATTERN" =~ [A-Z] ]]; then
-        # 包含大写 -> 区分大小写（不添加参数，使用默认）
-        :
+        # 固定字符串模式
+        RG_CMD="rg -F --context 999 --color=always --colors 'match:bg:red' --colors 'match:fg:white' --colors 'match:style:bold'"
     else
-        # 全小写 -> 忽略大小写
-        RG_CMD+=(--ignore-case)
+        # 正则模式 + Smart Case
+        if [[ "$PATTERN" =~ [A-Z] ]]; then
+            # 包含大写 -> 区分大小写
+            RG_CMD="rg --context 999 --color=always --colors 'match:bg:red' --colors 'match:fg:white' --colors 'match:style:bold'"
+        else
+            # 全小写 -> 忽略大小写
+            RG_CMD="rg -i --context 999 --color=always --colors 'match:bg:red' --colors 'match:fg:white' --colors 'match:style:bold'"
+        fi
     fi
     
-    # 6.4 添加搜索词和文件
-    RG_CMD+=("$PATTERN" "$FILE")
-    
-    # 6.5 执行命令
-    "${RG_CMD[@]}" 2>/dev/null
+    # 执行命令
+    eval "$RG_CMD '$PATTERN' '$FILE'" 2>/dev/null
     
 else
     # 【无搜索词】使用 bat 语法高亮
