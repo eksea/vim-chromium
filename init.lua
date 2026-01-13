@@ -525,6 +525,97 @@ require("lazy").setup({
     end,
   },
 
+  -- ==========================================================================
+  -- [轻量级补全] 仅基于 Buffer 和 Snippets (无 LSP)
+  -- ==========================================================================
+  
+  -- 1. 核心补全引擎 & 来源
+  {
+    "hrsh7th/nvim-cmp",
+    event = "InsertEnter", -- 进入插入模式时加载
+    dependencies = {
+      "hrsh7th/cmp-buffer",   -- 来源：当前文件内容的单词
+      "hrsh7th/cmp-path",     -- 来源：文件系统路径
+      "hrsh7th/cmp-cmdline",  -- 来源：命令行历史
+      "L3MON4D3/LuaSnip",     -- 引擎：代码片段
+      "saadparwaiz1/cmp_luasnip", -- 桥接：cmp <-> luasnip
+      "rafamadriz/friendly-snippets", -- 预设代码片段库 (for循环, main函数等)
+    },
+    config = function()
+      local cmp = require("cmp")
+      local luasnip = require("luasnip")
+
+      -- 加载常用的代码片段 (VSCode 风格)
+      require("luasnip.loaders.from_vscode").lazy_load()
+
+      cmp.setup({
+        -- 指定片段引擎
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
+        
+        -- 快捷键映射
+        mapping = cmp.mapping.preset.insert({
+          ["<C-k>"] = cmp.mapping.select_prev_item(), -- 上一个
+          ["<C-j>"] = cmp.mapping.select_next_item(), -- 下一个
+          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-Space>"] = cmp.mapping.complete(),     -- 手动触发
+          ["<C-e>"] = cmp.mapping.abort(),            -- 关闭
+          ["<CR>"] = cmp.mapping.confirm({ select = true }), -- 回车确认
+
+          -- Tab 键逻辑
+          ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+              luasnip.expand_or_jump()
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+          
+          ["<S-Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+              luasnip.jump(-1)
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+        }),
+
+        -- 补全来源 (去掉了 nvim_lsp)
+        sources = cmp.config.sources({
+          { name = "luasnip" },  -- 代码片段优先
+          { name = "buffer", keyword_length = 2 }, -- 当前文件单词 (输入2个字符后触发)
+          { name = "path" },     -- 路径补全
+        }),
+      })
+
+      -- 命令行搜索模式补全 (/ 搜索)
+      cmp.setup.cmdline('/', {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = {
+          { name = 'buffer' }
+        }
+      })
+
+      -- 命令行命令模式补全 (: 命令)
+      cmp.setup.cmdline(':', {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({
+          { name = 'path' }
+        }, {
+          { name = 'cmdline' }
+        })
+      })
+    end,
+  },
+
   -- [注释] Commentary
   { 'tpope/vim-commentary' },
 
