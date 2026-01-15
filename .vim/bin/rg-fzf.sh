@@ -3,11 +3,6 @@
 # 接收所有参数（保留空格）
 query="$*"
 
-# 空查询检查
-if [ -z "$query" ]; then
-  exit 0
-fi
-
 # 基础命令
 RG_BASE="rg --column --line-number --no-heading --color=always --smart-case --hidden"
 RG_EXCLUDE="--glob '!.git/*' --glob '!out/*' --glob '!mtout/*' --glob '!node_modules/*'"
@@ -29,8 +24,14 @@ fi
 # 清理空格
 query=$(echo "$query" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
 
-# 再次检查
+# 空查询检查
 if [ -z "$query" ]; then
+  exit 0
+fi
+
+# 最小字符数检查（至少 3 个字符）
+query_length=${#query}
+if [ "$query_length" -lt 3 ]; then
   exit 0
 fi
 
