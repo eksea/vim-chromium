@@ -92,7 +92,6 @@ vim.api.nvim_create_autocmd('VimEnter', {
 -- ==========================================================================
 local keymap = vim.keymap.set
 keymap("x", "p", '"_dP')
-keymap("v", "d", '"_d')
 keymap("v", "c", '"_c')
 keymap("v", "x", '"_x')
 
