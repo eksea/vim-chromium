@@ -1,6 +1,6 @@
 # Neovim 配置 - 现代化开发环境
 
-> 一个为大型项目（如 Chromium）优化的 Neovim 配置，提供强大的文件管理、搜索、Git 集成等功能。（LSP太占内存，暂不支持）
+> 一个为大型项目（如 Chromium）优化的 Neovim 配置，提供强大的文件管理、搜索、Git 集成等功能。
 
 ![Neovim](https://img.shields.io/badge/Neovim-0.8+-green.svg)
 ![Lua](https://img.shields.io/badge/Lua-5.1+-blue.svg)
