@@ -545,15 +545,15 @@ require("lazy").setup({
     end,
   },
 
-  -- 2. LSP 配置 (纯原生配置)
+  -- 2. LSP 配置 (适配 Neovim 0.11 新 API)
   {
     "neovim/nvim-lspconfig",
     dependencies = {
-      "williamboman/mason.nvim", -- 依赖 Mason 提供的路径
+      "williamboman/mason.nvim",
       "hrsh7th/cmp-nvim-lsp",
     },
     config = function()
-      local lspconfig = require("lspconfig")
+      -- 获取补全能力
       local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
       -- 定义通用的 on_attach (快捷键)
@@ -570,36 +570,54 @@ require("lazy").setup({
       end
 
       -- =========================================================
-      -- 手动配置服务器
-      -- 注意：因为移除了 mason-lspconfig，你需要手动安装这些服务器！
-      -- 运行 :Mason 然后手动安装 clangd, lua-language-server
+      -- 使用新的 vim.lsp.config API (Neovim 0.11+)
       -- =========================================================
 
       -- [1] Clangd (C/C++)
-      -- Mason 安装的 clangd 会自动添加到 PATH，所以直接用 "clangd" 即可
-      lspconfig.clangd.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        cmd = { 
-          "clangd", 
-          "--background-index", 
-          "--clang-tidy",
-          "--header-insertion=iwyu",
-          "--completion-style=detailed",
-          "--function-arg-placeholders",
+      vim.lsp.config.clangd = {
+        cmd = {
+          "clangd",
+          "--background-index=false",              -- 【关键】禁用后台索引，按需索引
+          "--clang-tidy=false",                    -- 【关键】禁用 clang-tidy（CPU 杀手）
+          "--completion-style=bundled",            -- 简化补全样式
+          "--header-insertion=never",              -- 禁用自动插入头文件（减少 I/O）
+          "--pch-storage=memory",                  -- PCH 存储在内存（更快但占内存）
+          "--limit-results=50",                    -- 限制补全结果数量
+          "--limit-references=100",                -- 限制引用查找数量
+          "-j=4",                                  -- 限制并行任务数（根据 CPU 核心数调整）
+          "--malloc-trim",                         -- 定期释放内存
           "--fallback-style=llvm",
+          -- "--limit-results=20",                    -- 限制补全结果
+          "--limit-references=50",                 -- 限制引用查找
+          -- 其他
+          "--log=error",                           -- 只记录错误日志
         },
+        filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+        root_markers = {
+          ".clangd",
+          ".clang-tidy",
+          ".clang-format",
+          "compile_commands.json",
+          "compile_flags.txt",
+          "configure.ac",
+          ".git"
+        },
+        capabilities = capabilities,
+        on_attach = on_attach,
         init_options = {
           usePlaceholders = true,
           completeUnimported = true,
           clangdFileStatus = true,
         },
-      })
+      }
 
       -- [2] Lua
-      lspconfig.lua_ls.setup({
-        on_attach = on_attach,
+      vim.lsp.config.lua_ls = {
+        cmd = { "lua-language-server" },
+        filetypes = { "lua" },
+        root_markers = { ".luarc.json", ".luarc.jsonc", ".luacheckrc", ".stylua.toml", "stylua.toml", "selene.toml", "selene.yml", ".git" },
         capabilities = capabilities,
+        on_attach = on_attach,
         settings = {
           Lua = {
             diagnostics = { globals = { "vim" } },
@@ -610,13 +628,21 @@ require("lazy").setup({
             telemetry = { enable = false },
           },
         },
-      })
+      }
 
       -- [3] Bash
-      lspconfig.bashls.setup({
-        on_attach = on_attach,
+      vim.lsp.config.bashls = {
+        cmd = { "bash-language-server", "start" },
+        filetypes = { "sh", "bash" },
+        root_markers = { ".git" },
         capabilities = capabilities,
-      })
+        on_attach = on_attach,
+      }
+
+      -- =========================================================
+      -- 启用 LSP (自动检测文件类型并启动对应服务器)
+      -- =========================================================
+      vim.lsp.enable({ 'clangd', 'lua_ls', 'bashls' })
     end,
   },
 
@@ -685,6 +711,92 @@ require("lazy").setup({
           })
         }
       })
+    end,
+  },
+
+  -- ==========================================================================
+  -- [文件大纲] Aerial (基于 LSP/Treesitter)
+  -- ==========================================================================
+  {
+    'stevearc/aerial.nvim',
+    branch = "nvim-0.9",
+    dependencies = {
+       "nvim-treesitter/nvim-treesitter",
+       "nvim-tree/nvim-web-devicons"
+    },
+    config = function()
+      require("aerial").setup({
+        -- 优先使用 LSP，如果不可用则使用 Treesitter
+        backends = { "lsp", "treesitter", "markdown", "man" },
+        
+        -- 布局设置
+        layout = {
+          -- 宽度设置
+          max_width = { 40, 0.2 },
+          width = nil,
+          min_width = 10,
+          
+          -- 默认显示在右侧 (toggle 时)
+          default_direction = "prefer_right",
+          
+          -- 当文件只有一个符号时自动关闭
+          close_on_cleanup = true,
+        },
+
+        -- 过滤设置：不显示过于琐碎的符号
+        filter_kind = {
+          "Class",
+          "Constructor",
+          "Enum",
+          "Function",
+          "Interface",
+          "Module",
+          "Method",
+          "Struct",
+          -- "Variable", -- 通常变量太多，建议注释掉，除非你想看
+        },
+
+        -- 高亮当前光标所在的符号
+        highlight_on_hover = true,
+        autojump = true,
+
+        -- 图标设置 (使用 nvim-web-devicons)
+        icons = vim.g.have_nerd_font and {} or {
+          collapsed = "▶",
+          expanded = "▼",
+        },
+        
+        -- 快捷键 (在 Aerial 窗口内)
+        keymaps = {
+          ["?"] = "actions.show_help",
+          ["g?"] = "actions.show_help",
+          ["<CR>"] = "actions.jump",
+          ["<2-LeftMouse>"] = "actions.jump",
+          ["<C-v>"] = "actions.jump_vsplit",
+          ["<C-s>"] = "actions.jump_split",
+          ["p"] = "actions.scroll",
+          ["<C-j>"] = "actions.down_and_scroll",
+          ["<C-k>"] = "actions.up_and_scroll",
+          ["{"] = "actions.prev",
+          ["}"] = "actions.next",
+          ["[["] = "actions.prev_up",
+          ["]]"] = "actions.next_up",
+          ["q"] = "actions.close",
+          ["o"] = "actions.tree_toggle",
+          ["za"] = "actions.tree_toggle",
+          ["O"] = "actions.tree_toggle_recursive",
+          ["zA"] = "actions.tree_toggle_recursive",
+          ["l"] = "actions.tree_open",
+          ["h"] = "actions.tree_close",
+        },
+      })
+
+      -- 全局快捷键：<Space>a 打开/关闭大纲
+      vim.keymap.set("n", "<Leader>a", "<cmd>AerialToggle!<CR>", { desc = "文件大纲 (Aerial)" })
+      
+      -- 快捷键：{ 和 } 在代码中跳转到上一个/下一个符号 (类似 [[ ]])
+      vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { desc = "上一个符号" })
+      vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { desc = "下一个符号" })
     end,
   },
 
