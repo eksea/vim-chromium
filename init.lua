@@ -189,7 +189,6 @@ require("lazy").setup({
       -- 自动保存宽度
       vim.api.nvim_create_autocmd('WinResized', {
         callback = function()
-          print('[DEBUG] WinResized 事件触发')
           if vim.bo.filetype == 'NvimTree' then
             save_width(vim.api.nvim_win_get_width(0))
           end
@@ -231,7 +230,8 @@ require("lazy").setup({
       if not status then return end
 
       configs.setup({
-        ensure_installed = { "c", "cpp", "gn", "lua", "vim", "bash" },
+        -- 【修改】添加 "java" 以支持 Java 高亮
+        ensure_installed = { "c", "cpp", "gn", "lua", "vim", "bash", "java" },
         sync_install = true,
         auto_install = true,
         highlight = {
@@ -335,8 +335,6 @@ require("lazy").setup({
       { '<Leader>gl', ':Gclog<CR>', desc = 'Git log' },
     },
   },
-
-  -- 在 require("lazy").setup({ 中添加
 
   -- [Git 状态显示] Gitsigns
   {
@@ -446,42 +444,29 @@ require("lazy").setup({
       { "<Leader>m", "<cmd>MarkdownPreviewToggle<cr>", desc = "Markdown 预览" },
     },
     config = function()
-      -- 设置浏览器（可选）
-      -- vim.g.mkdp_browser = 'chrome'  -- 或 'firefox', 'safari'
-      
-      -- 预览服务器配置
       vim.g.mkdp_auto_start = 0          -- 打开 markdown 文件时不自动预览
       vim.g.mkdp_auto_close = 0          -- 关闭 buffer 时自动关闭预览
-      vim.g.mkdp_refresh_slow = 0        -- 实时刷新（0=快速，1=保存时刷新）
+      vim.g.mkdp_refresh_slow = 0        -- 实时刷新
       vim.g.mkdp_command_for_global = 0  -- 只在 markdown 文件中可用
       vim.g.mkdp_open_to_the_world = 0   -- 只允许本地访问
       
-      -- 预览选项
       vim.g.mkdp_preview_options = {
         mkit = {},
         katex = {},
         uml = {},
         maid = {},
-        disable_sync_scroll = 0,         -- 同步滚动
-        sync_scroll_type = 'middle',     -- 滚动位置
-        hide_yaml_meta = 1,              -- 隐藏 YAML 元数据
+        disable_sync_scroll = 0,
+        sync_scroll_type = 'middle',
+        hide_yaml_meta = 1,
         sequence_diagrams = {},
         flowchart_diagrams = {},
-        content_editable = false,        -- 预览内容不可编辑
-        disable_filename = 0,            -- 显示文件名
+        content_editable = false,
+        disable_filename = 0,
         toc = {}
       }
       
-      -- 主题：github（默认）或 dark
       vim.g.mkdp_theme = 'dark'
-      
-      -- 自定义端口（可选）
-      -- vim.g.mkdp_port = '8080'
-      
-      -- 预览页面标题
       vim.g.mkdp_page_title = '「${name}」'
-      
-      -- 识别的文件类型
       vim.g.mkdp_filetypes = { "markdown" }
     end,
   },
@@ -491,31 +476,27 @@ require("lazy").setup({
     event = "VeryLazy",
     config = function()
       require('neoscroll').setup({
-        -- 滚动动画时间（毫秒）
         mappings = {
-          '<C-u>', '<C-d>',      -- 半页滚动
-          '<C-b>', '<C-f>',      -- 整页滚动
-          '<C-y>', '<C-e>',      -- 单行滚动
-          'zt', 'zz', 'zb',      -- 重新定位
+          '<C-u>', '<C-d>',
+          '<C-b>', '<C-f>',
+          '<C-y>', '<C-e>',
+          'zt', 'zz', 'zb',
         },
-        hide_cursor = true,          -- 滚动时隐藏光标
-        stop_eof = true,             -- 到达文件末尾时停止
-        respect_scrolloff = false,   -- 不受 scrolloff 影响
-        cursor_scrolls_alone = true, -- 光标独立滚动
-        easing_function = "sine",    -- 缓动函数: sine, circular, quadratic
-        pre_hook = nil,
-        post_hook = nil,
-        performance_mode = false,    -- 大文件性能模式
+        hide_cursor = true,
+        stop_eof = true,
+        respect_scrolloff = false,
+        cursor_scrolls_alone = true,
+        easing_function = "sine",
+        performance_mode = false,
       })
 
-      -- 自定义滚动速度
       local t = {}
-      t['<C-u>'] = {'scroll', {'-vim.wo.scroll', 'true', '150'}}  -- 向上半页，150ms
-      t['<C-d>'] = {'scroll', { 'vim.wo.scroll', 'true', '150'}}  -- 向下半页，150ms
-      t['<C-b>'] = {'scroll', {'-vim.api.nvim_win_get_height(0)', 'true', '250'}}  -- 向上整页
-      t['<C-f>'] = {'scroll', { 'vim.api.nvim_win_get_height(0)', 'true', '250'}}  -- 向下整页
-      t['<C-y>'] = {'scroll', {'-0.10', 'false', '100'}}  -- 向上滚动 10%
-      t['<C-e>'] = {'scroll', { '0.10', 'false', '100'}}  -- 向下滚动 10%
+      t['<C-u>'] = {'scroll', {'-vim.wo.scroll', 'true', '150'}}
+      t['<C-d>'] = {'scroll', { 'vim.wo.scroll', 'true', '150'}}
+      t['<C-b>'] = {'scroll', {'-vim.api.nvim_win_get_height(0)', 'true', '250'}}
+      t['<C-f>'] = {'scroll', { 'vim.api.nvim_win_get_height(0)', 'true', '250'}}
+      t['<C-y>'] = {'scroll', {'-0.10', 'false', '100'}}
+      t['<C-e>'] = {'scroll', { '0.10', 'false', '100'}}
       t['zt']    = {'zt', {'150'}}
       t['zz']    = {'zz', {'150'}}
       t['zb']    = {'zb', {'150'}}
@@ -593,19 +574,16 @@ require("lazy").setup({
       vim.lsp.config.clangd = {
         cmd = {
           "clangd",
-          "--background-index=false",              -- 【关键】禁用后台索引，按需索引
-          "--clang-tidy=false",                    -- 【关键】禁用 clang-tidy（CPU 杀手）
+          "--background-index=false",              -- 【关键】禁用后台索引
+          "--clang-tidy=false",                    -- 【关键】禁用 clang-tidy
           "--completion-style=bundled",            -- 简化补全样式
-          "--header-insertion=never",              -- 禁用自动插入头文件（减少 I/O）
-          "--pch-storage=memory",                  -- PCH 存储在内存（更快但占内存）
+          "--header-insertion=never",              -- 禁用自动插入头文件
+          "--pch-storage=memory",                  -- PCH 存储在内存
           "--limit-results=50",                    -- 限制补全结果数量
           "--limit-references=100",                -- 限制引用查找数量
-          "-j=4",                                  -- 限制并行任务数（根据 CPU 核心数调整）
+          "-j=4",                                  -- 限制并行任务数
           "--malloc-trim",                         -- 定期释放内存
           "--fallback-style=llvm",
-          -- "--limit-results=20",                    -- 限制补全结果
-          "--limit-references=50",                 -- 限制引用查找
-          -- 其他
           "--log=error",                           -- 只记录错误日志
         },
         filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
@@ -655,10 +633,35 @@ require("lazy").setup({
         on_attach = on_attach,
       }
 
+      -- [4] Java (JDTLS)
+      -- 注意：需要先通过 :Mason 安装 jdtls
+      vim.lsp.config.jdtls = {
+        cmd = {
+          "jdtls",
+          "--jvm-arg=-Djava.home=/usr/lib/jvm/java-21-openjdk-amd64",
+        }, -- Mason 会自动创建这个命令
+        filetypes = { "java" },
+        root_markers = { 
+          "pom.xml",        -- Maven
+          -- "build.gradle",   -- Gradle
+          -- ".git", 
+          -- "mvnw", 
+          -- "gradlew" 
+        },
+        capabilities = capabilities,
+        on_attach = on_attach,
+        settings = {
+          java = {
+            signatureHelp = { enabled = true },
+            contentProvider = { preferred = 'fernflower' }, -- 反编译支持
+          }
+        }
+      }
+
       -- =========================================================
       -- 启用 LSP (自动检测文件类型并启动对应服务器)
       -- =========================================================
-      vim.lsp.enable({ 'clangd', 'lua_ls', 'bashls' })
+      vim.lsp.enable({ 'clangd', 'lua_ls', 'bashls', 'jdtls' })
     end,
   },
 
@@ -821,6 +824,28 @@ require("lazy").setup({
 
   -- [GN 语法支持]
   { 'kalcutter/vim-gn' },
+
+  -- [会话管理] 自动恢复工作区
+  {
+    'rmagatti/auto-session',
+    config = function()
+      require("auto-session").setup({
+        log_level = "error",
+        
+        -- 自动行为配置
+        auto_session_enable_last_session = false, -- 启动时不自动恢复上一次的会话（除非在同一目录）
+        auto_save_enabled = true,                 -- 退出时自动保存
+        auto_restore_enabled = true,              -- 启动时自动恢复（如果在有会话的目录下）
+        
+        -- 忽略的目录 (避免在根目录或主目录乱存会话)
+        auto_session_suppress_dirs = { "~/", "/", "~/Downloads", "~/Documents", "~/Desktop" },
+        
+        -- [关键] 兼容性处理
+        -- 保存会话前关闭 Nvim-Tree，防止恢复时布局错乱
+        pre_save_cmds = { "NvimTreeClose" },
+      })
+    end,
+  },
 })
 
 -- ==========================================================================
