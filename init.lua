@@ -451,7 +451,7 @@ require("lazy").setup({
       
       -- 预览服务器配置
       vim.g.mkdp_auto_start = 0          -- 打开 markdown 文件时不自动预览
-      vim.g.mkdp_auto_close = 1          -- 关闭 buffer 时自动关闭预览
+      vim.g.mkdp_auto_close = 0          -- 关闭 buffer 时自动关闭预览
       vim.g.mkdp_refresh_slow = 0        -- 实时刷新（0=快速，1=保存时刷新）
       vim.g.mkdp_command_for_global = 0  -- 只在 markdown 文件中可用
       vim.g.mkdp_open_to_the_world = 0   -- 只允许本地访问
@@ -545,6 +545,22 @@ require("lazy").setup({
     end,
   },
 
+  -- [FZF-Lua] 专门用于 Neovim 的 FZF 扩展 (支持 LSP)
+  {
+    "ibhagwan/fzf-lua",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("fzf-lua").setup({
+        winopts = {
+          preview = {
+            layout = "vertical", -- 垂直预览
+            vertical = "up:45%", -- 预览窗口在上方
+          }
+        }
+      })
+    end
+  },
+
   -- 2. LSP 配置 (适配 Neovim 0.11 新 API)
   {
     "neovim/nvim-lspconfig",
@@ -561,7 +577,7 @@ require("lazy").setup({
         local opts = { buffer = bufnr, silent = true }
         vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
         vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-        vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+        vim.keymap.set('n', 'gr', "<cmd>FzfLua lsp_references<CR>", opts)
         vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
         vim.keymap.set('n', '<Leader>rn', vim.lsp.buf.rename, opts)
         vim.keymap.set('n', '<Leader>ca', vim.lsp.buf.code_action, opts)
