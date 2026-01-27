@@ -476,32 +476,40 @@ require("lazy").setup({
     event = "VeryLazy",
     config = function()
       require('neoscroll').setup({
-        mappings = {
-          '<C-u>', '<C-d>',
-          '<C-b>', '<C-f>',
-          '<C-y>', '<C-e>',
-          'zt', 'zz', 'zb',
-        },
-        hide_cursor = true,
-        stop_eof = true,
-        respect_scrolloff = false,
-        cursor_scrolls_alone = true,
-        easing_function = "sine",
-        performance_mode = false,
+        -- 基础配置
+        hide_cursor = true,          -- 滚动时隐藏光标
+        stop_eof = true,             -- 到达文件末尾时停止
+        respect_scrolloff = false,   -- 不受 scrolloff 影响
+        cursor_scrolls_alone = true, -- 光标独立滚动
+        easing = "sine",             -- 缓动函数 (新版使用 easing 而不是 easing_function)
+        performance_mode = false,    -- 大文件性能模式
       })
 
-      local t = {}
-      t['<C-u>'] = {'scroll', {'-vim.wo.scroll', 'true', '150'}}
-      t['<C-d>'] = {'scroll', { 'vim.wo.scroll', 'true', '150'}}
-      t['<C-b>'] = {'scroll', {'-vim.api.nvim_win_get_height(0)', 'true', '250'}}
-      t['<C-f>'] = {'scroll', { 'vim.api.nvim_win_get_height(0)', 'true', '250'}}
-      t['<C-y>'] = {'scroll', {'-0.10', 'false', '100'}}
-      t['<C-e>'] = {'scroll', { '0.10', 'false', '100'}}
-      t['zt']    = {'zt', {'150'}}
-      t['zz']    = {'zz', {'150'}}
-      t['zb']    = {'zb', {'150'}}
+      -- 【新版 API】使用 neoscroll 提供的辅助函数配置快捷键
+      local neoscroll = require('neoscroll')
+      local keymap = {
+        -- 半页滚动
+        ["<C-u>"] = function() neoscroll.ctrl_u({ duration = 150 }) end,
+        ["<C-d>"] = function() neoscroll.ctrl_d({ duration = 150 }) end,
+        
+        -- 整页滚动
+        ["<C-b>"] = function() neoscroll.ctrl_b({ duration = 250 }) end,
+        ["<C-f>"] = function() neoscroll.ctrl_f({ duration = 250 }) end,
+        
+        -- 单行滚动
+        ["<C-y>"] = function() neoscroll.scroll(-0.1, { move_cursor=false, duration = 100 }) end,
+        ["<C-e>"] = function() neoscroll.scroll(0.1, { move_cursor=false, duration = 100 }) end,
+        
+        -- 重新定位
+        ["zt"]    = function() neoscroll.zt({ half_win_duration = 150 }) end,
+        ["zz"]    = function() neoscroll.zz({ half_win_duration = 150 }) end,
+        ["zb"]    = function() neoscroll.zb({ half_win_duration = 150 }) end,
+      }
 
-      require('neoscroll.config').set_mappings(t)
+      local modes = { 'n', 'v', 'x' }
+      for key, func in pairs(keymap) do
+        vim.keymap.set(modes, key, func)
+      end
     end,
   },
 
