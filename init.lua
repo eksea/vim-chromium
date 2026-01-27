@@ -863,6 +863,16 @@ keymap("n", "<C-l>", "<C-w>l", { desc = "切换到右窗口" })
 keymap("n", "<C-j>", "<C-w>j", { desc = "切换到下窗口" })
 keymap("n", "<C-k>", "<C-w>k", { desc = "切换到上窗口" })
 
+
+-- 【新增】文件结构大纲（支持搜索和跳转）
+keymap("n", "<Leader>fs", "<cmd>FzfLua lsp_document_symbols<CR>", { silent = true, desc = "文件结构搜索" })
+
+-- 【新增】工作区所有符号搜索（跨文件）
+keymap("n", "<Leader>fw", "<cmd>FzfLua lsp_workspace_symbols<CR>", { silent = true, desc = "工作区符号搜索" })
+
+-- 【可选】实时符号搜索（输入时动态过滤）
+keymap("n", "<Leader>fS", "<cmd>FzfLua lsp_live_workspace_symbols<CR>", { silent = true, desc = "实时符号搜索" })
+
 -- ==========================================================================
 -- 6. Git 配置提示（首次使用需要配置）
 -- ==========================================================================
