@@ -285,43 +285,78 @@ require("lazy").setup({
     end
   },
 
-  -- [终端] Vim-Floaterm
+  -- [终端] ToggleTerm (替代 Floaterm，支持原生窗口切换)
   {
-    "voldikss/vim-floaterm",
+    'akinsho/toggleterm.nvim',
+    version = "*",
     config = function()
-      vim.g.floaterm_width = 0.8
-      vim.g.floaterm_height = 0.8
-      vim.g.floaterm_position = "center"
-      vim.g.floaterm_title = " Terminal $1/$2 "
-      
-      -- 解决退出报错
-      vim.api.nvim_create_autocmd("QuitPre", {
-        pattern = "*",
-        command = "silent! FloatermKill!"
+      require("toggleterm").setup({
+        -- 大小配置
+        size = function(term)
+          if term.direction == "horizontal" then
+            return 15
+          elseif term.direction == "vertical" then
+            return vim.o.columns * 0.4 -- 占宽度的 40%
+          end
+        end,
+        open_mapping = [[<F12>]], -- F12 唤起/隐藏
+        hide_numbers = true,      -- 隐藏行号
+        shade_terminals = true,
+        start_in_insert = true,
+        insert_mappings = true,   -- 允许在 insert 模式下使用映射
+        persist_size = true,
+        direction = 'float',      -- 默认浮动，但我们会手动调用 vertical
+        close_on_exit = true,     -- 退出 shell 时关闭窗口
+        shell = vim.o.shell,
+        float_opts = {
+          border = 'curved',
+        },
       })
 
-      keymap("t", "<Esc>", function()
-        -- 检查是否是 FZF 缓冲区
-        local bufname = vim.api.nvim_buf_get_name(0)
-        if bufname:match("^term://.*fzf") then
-          -- FZF 缓冲区：发送 Esc 给 FZF（关闭搜索）
-          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), 'n', true)
-        else
-          -- Floaterm 缓冲区：退出终端模式
-          vim.cmd('stopinsert')
-        end
-      end, { noremap = true })
+      -- ========================================
+      -- 快捷键映射
+      -- ========================================
+      local keymap = vim.keymap.set
+      local Terminal = require('toggleterm.terminal').Terminal
+
+      -- 1. 右侧边栏终端 (真正的分屏，支持 <C-w>l 切入)
+      local sidebar = Terminal:new({ direction = 'vertical' })
       
-      -- 快捷键映射 (F12 等)
-      keymap("n", "<Leader>t", ":FloatermToggle<CR>", { silent = true })
-      keymap("n", "<F12>", ":FloatermToggle<CR>", { silent = true })
-      keymap("t", "<F12>", "<C-\\><C-n>:FloatermToggle<CR>", { silent = true })
-      keymap("n", "<S-F12>", ":FloatermNew<CR>", { silent = true })
-      keymap("t", "<S-F12>", "<C-\\><C-n>:FloatermNew<CR>", { silent = true })
-      keymap("n", "<M-n>", ":FloatermNext<CR>", { silent = true })
-      keymap("t", "<M-n>", "<C-\\><C-n>:FloatermNext<CR>", { silent = true })
-      keymap("n", "<Leader>g", ":FloatermNew --name=lazygit --height=0.95 --width=0.95 --autoclose=2 lazygit<CR>", { silent = true })
-    end,
+      keymap("n", "<Leader>tr", function()
+        sidebar:toggle()
+      end, { silent = true, desc = "右侧终端 (分屏)" })
+
+      -- 2. 底部终端
+      local bottom = Terminal:new({ direction = 'horizontal' })
+      keymap("n", "<Leader>tb", function()
+        bottom:toggle()
+      end, { silent = true, desc = "底部终端" })
+      
+      -- 3. 浮动终端 (Lazygit)
+      local lazygit = Terminal:new({ cmd = "lazygit", hidden = true, direction = "float" })
+      keymap("n", "<Leader>g", function()
+        lazygit:toggle()
+      end, { silent = true, desc = "Lazygit" })
+
+      -- ========================================
+      -- 窗口导航核心配置 (让 <C-w> 在终端里也能用)
+      -- ========================================
+      function _G.set_terminal_keymaps()
+        local opts = {buffer = 0}
+        -- 让 <C-w> 系列键在终端模式下生效
+        vim.keymap.set('t', '<C-w>h', [[<Cmd>wincmd h<CR>]], opts)
+        vim.keymap.set('t', '<C-w>j', [[<Cmd>wincmd j<CR>]], opts)
+        vim.keymap.set('t', '<C-w>k', [[<Cmd>wincmd k<CR>]], opts)
+        vim.keymap.set('t', '<C-w>l', [[<Cmd>wincmd l<CR>]], opts)
+        -- 如果你想用 <C-h/j/k/l> 直接切换，也可以解开下面注释：
+        -- vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
+        -- vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
+        vim.keymap.set('t', '<Esc>', [[<C-\><C-n>:close<CR>]], opts)
+      end
+
+      -- 自动应用快捷键到终端 buffer
+      vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
+    end
   },
 
   -- [Git 集成] Vim-Fugitive（增强 Git 操作）
@@ -489,16 +524,16 @@ require("lazy").setup({
       local neoscroll = require('neoscroll')
       local keymap = {
         -- 半页滚动
-        ["<C-u>"] = function() neoscroll.ctrl_u({ duration = 150 }) end,
-        ["<C-d>"] = function() neoscroll.ctrl_d({ duration = 150 }) end,
+        ["<C-y>"] = function() neoscroll.ctrl_u({ duration = 150 }) end,
+        ["<C-e>"] = function() neoscroll.ctrl_d({ duration = 150 }) end,
         
         -- 整页滚动
         ["<C-b>"] = function() neoscroll.ctrl_b({ duration = 250 }) end,
         ["<C-f>"] = function() neoscroll.ctrl_f({ duration = 250 }) end,
         
         -- 单行滚动
-        ["<C-y>"] = function() neoscroll.scroll(-0.1, { move_cursor=false, duration = 100 }) end,
-        ["<C-e>"] = function() neoscroll.scroll(0.1, { move_cursor=false, duration = 100 }) end,
+        ["<C-u>"] = function() neoscroll.scroll(-0.1, { move_cursor=false, duration = 100 }) end,
+        ["<C-d>"] = function() neoscroll.scroll(0.1, { move_cursor=false, duration = 100 }) end,
         
         -- 重新定位
         ["zt"]    = function() neoscroll.zt({ half_win_duration = 150 }) end,
@@ -880,6 +915,18 @@ keymap("n", "<Leader>fw", "<cmd>FzfLua lsp_workspace_symbols<CR>", { silent = tr
 
 -- 【可选】实时符号搜索（输入时动态过滤）
 keymap("n", "<Leader>fS", "<cmd>FzfLua lsp_live_workspace_symbols<CR>", { silent = true, desc = "实时符号搜索" })
+
+-- ========================================
+-- 跳转到当前函数/类的开头
+-- ========================================
+keymap("n", "<Leader>jf", function()
+  require("aerial").select({ index = 0 })  -- 跳转到当前符号的开头
+end, { desc = "跳转到当前函数开头" })
+
+-- 或者使用更智能的方式：跳转到包含当前光标的最近符号
+keymap("n", "<Leader>jh", function()
+  require("aerial").up(1)  -- 跳转到上一级符号（如从函数内跳到函数名）
+end, { desc = "跳转到上一级符号" })
 
 -- ==========================================================================
 -- 6. Git 配置提示（首次使用需要配置）
