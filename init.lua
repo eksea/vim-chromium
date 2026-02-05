@@ -256,7 +256,7 @@ require("lazy").setup({
         function! s:live_grep_handler(args)
           let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
           let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
-          
+
           let spec = {}
           let spec.options = [
             \ '--disabled',
@@ -267,12 +267,26 @@ require("lazy").setup({
             \ '--prompt', 'Rg> ',
             \ '--delimiter', ':'
             \ ]
-          
+
           call fzf#vim#grep('true', 1, spec, 0)
         endfunction
-        
+
         command! -nargs=* Rg call s:live_grep_handler(<q-args>)
-        
+
+        " FilesAll 命令（包含 .gitignore 排除的文件）
+        command! -bang FilesAll
+          \ call fzf#vim#files(
+          \   '',
+          \   extend(
+          \     {
+          \       'source': 'rg --files --hidden --no-ignore --follow --glob "!.git/*" 2>/dev/null',
+          \       'options': ['--prompt', 'AllFiles> ']
+          \     },
+          \     fzf#vim#with_preview(),
+          \     'keep'
+          \   ),
+          \   <bang>0)
+
         " Buffers 命令（带预览）
         command! -bang Buffers
           \ call fzf#vim#buffers(
@@ -896,6 +910,7 @@ require("lazy").setup({
 -- ==========================================================================
 -- FZF 快捷键
 keymap("n", "<Leader>o", ":Files<CR>", { silent = true, desc = "查找文件" })
+keymap("n", "<Leader>oa", ":FilesAll<CR>", { silent = true, desc = "查找所有文件（包含.gitignore排除的）" })
 -- <Leader>f存在组合，导致搜索面板呼出太慢，改成<Leader>s
 keymap("n", "<Leader>s", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
 keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
