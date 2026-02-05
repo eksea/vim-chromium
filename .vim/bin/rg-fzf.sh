@@ -1,50 +1,32 @@
 #!/usr/bin/env bash
 
-# 接收所有参数（保留空格）
-query="$*"
+# 接收所有输入
+input="$*"
 
-# 基础命令
-RG_BASE="rg --column --line-number --no-heading --color=always --smart-case --hidden"
-RG_EXCLUDE="--glob '!.git/*' --glob '!out/*' --glob '!mtout/*' --glob '!node_modules/*'"
-
-# 检测 -i（忽略大小写）
-IGNORE_CASE=""
-if [[ "$query" =~ (^|[[:space:]])-i([[:space:]]|$) ]]; then
-  IGNORE_CASE="-i"
-  query=$(echo "$query" | sed -E 's/(^|[[:space:]])-i([[:space:]]|$)/ /g')
-fi
-
-# 检测 -F
-FIXED_STRING=""
-if [[ "$query" =~ (^|[[:space:]])-F([[:space:]]|$) ]]; then
-  FIXED_STRING="-F"
-  query=$(echo "$query" | sed -E 's/(^|[[:space:]])-F([[:space:]]|$)/ /g')
-fi
-
-# 检测 -g
-GLOB_PATTERN=""
-if [[ "$query" =~ -g[[:space:]]+([^[:space:]]+) ]]; then
-  GLOB_PATTERN="${BASH_REMATCH[1]}"
-  query=$(echo "$query" | sed -E "s/-g[[:space:]]+[^[:space:]]+//g")
-fi
-
-# 清理空格
-query=$(echo "$query" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-
-# 空查询检查
-if [ -z "$query" ]; then
+# 如果输入为空，直接退出
+if [ -z "$input" ]; then
   exit 0
 fi
 
 # 最小字符数检查（至少 3 个字符）
-query_length=${#query}
-if [ "$query_length" -lt 3 ]; then
+if [ ${#input} -lt 3 ]; then
   exit 0
 fi
 
-# 执行搜索
-if [ -n "$GLOB_PATTERN" ]; then
-  eval "$RG_BASE $IGNORE_CASE $FIXED_STRING $RG_EXCLUDE --glob '$GLOB_PATTERN' -- \"\$query\""
+# 基础必需参数（FZF 需要的格式）
+RG_BASE="rg --column --line-number --no-heading --color=always"
+
+# 默认参数（当用户没有提供对应参数时使用）
+RG_DEFAULT="--smart-case --hidden"
+
+# 排除目录（始终生效）
+RG_EXCLUDE="--glob '!.git/*' --glob '!out/*' --glob '!mtout/*' --glob '!node_modules/*'"
+
+# 检查用户是否提供了自定义参数（以 - 或 -- 开头）
+if [[ "$input" =~ (^|[[:space:]])(-[^[:space:]]+) ]]; then
+  # 用户提供了参数，直接透传所有内容给 rg
+  eval "$RG_BASE $RG_EXCLUDE $input"
 else
-  eval "$RG_BASE $IGNORE_CASE $FIXED_STRING $RG_EXCLUDE -- \"\$query\""
+  # 用户只提供了搜索词，使用默认配置
+  eval "$RG_BASE $RG_DEFAULT $RG_EXCLUDE -- \"\$input\""
 fi

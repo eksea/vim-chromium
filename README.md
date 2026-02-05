@@ -371,18 +371,55 @@ H         " 切换隐藏文件
 ?         " 显示帮助
 ```
 
-### 4. 搜索高级用法
+### 4. Ripgrep 搜索高级用法
 
-```vim
-" 在特定文件类型中搜索
-:Rg -g *.cpp keyword
+按 `<Space>s` 打开搜索后，可以使用以下 ripgrep 参数：
 
-" 排除特定文件
-:Rg -g !test_* keyword
-
-" 搜索多个模式
-:Rg "pattern1|pattern2"
+#### 基础搜索
 ```
+hello                    # 普通搜索（默认 smart-case + hidden）
+```
+
+#### 大小写控制
+```
+-i Hello                 # 忽略大小写（强制）
+-s hello                 # 区分大小写（覆盖 smart-case）
+```
+
+#### 忽略 .gitignore
+```
+--no-ignore hello        # 搜索 .gitignore 中的文件
+--no-ignore -i hello     # 组合使用：忽略 gitignore + 忽略大小写
+```
+
+#### 文件类型过滤
+```
+-t cpp hello             # 只搜索 C++ 文件
+-t py -t js hello        # 搜索 Python 和 JavaScript 文件
+-T cpp hello             # 排除 C++ 文件
+```
+
+#### 正则表达式
+```
+hello.*world             # 正则表达式搜索（默认）
+-F hello.txt             # 固定字符串搜索（不使用正则）
+```
+
+#### 常用组合
+```
+--no-ignore -i -t cpp TODO          # 搜索所有 C++ 文件中的 TODO（包括 gitignore 的文件）
+-F -i "some text"                    # 固定字符串 + 忽略大小写
+-s -t java ClassName                 # 区分大小写搜索 Java 文件
+```
+
+#### 更多参数
+- `-w`：匹配完整单词
+- `-v`：反向匹配（显示不包含模式的行）
+- `-A <N>`：显示匹配行后 N 行
+- `-B <N>`：显示匹配行前 N 行
+- `-C <N>`：显示匹配行前后各 N 行
+
+**提示**：所有 ripgrep 的原生参数都可以直接使用，无需修改配置脚本。
 
 ## 🤝 贡献
 
