@@ -7,6 +7,13 @@ query="$*"
 RG_BASE="rg --column --line-number --no-heading --color=always --smart-case --hidden"
 RG_EXCLUDE="--glob '!.git/*' --glob '!out/*' --glob '!mtout/*' --glob '!node_modules/*'"
 
+# 检测 -i（忽略大小写）
+IGNORE_CASE=""
+if [[ "$query" =~ (^|[[:space:]])-i([[:space:]]|$) ]]; then
+  IGNORE_CASE="-i"
+  query=$(echo "$query" | sed -E 's/(^|[[:space:]])-i([[:space:]]|$)/ /g')
+fi
+
 # 检测 -F
 FIXED_STRING=""
 if [[ "$query" =~ (^|[[:space:]])-F([[:space:]]|$) ]]; then
@@ -37,7 +44,7 @@ fi
 
 # 执行搜索
 if [ -n "$GLOB_PATTERN" ]; then
-  eval "$RG_BASE $FIXED_STRING $RG_EXCLUDE --glob '$GLOB_PATTERN' -- \"\$query\""
+  eval "$RG_BASE $IGNORE_CASE $FIXED_STRING $RG_EXCLUDE --glob '$GLOB_PATTERN' -- \"\$query\""
 else
-  eval "$RG_BASE $FIXED_STRING $RG_EXCLUDE -- \"\$query\""
+  eval "$RG_BASE $IGNORE_CASE $FIXED_STRING $RG_EXCLUDE -- \"\$query\""
 fi
