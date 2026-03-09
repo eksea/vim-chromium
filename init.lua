@@ -309,7 +309,7 @@ require("lazy").setup({
             \ '--bind', 'change:reload:'.helper_script.' '.shellescape(search_dir).' {q}',
             \ '--preview', preview_script . ' {1} {2} {q}',
             \ '--preview-window', 'right:50%:noborder:~2',
-            \ '--prompt', 'Rg['.fnamemodify(search_dir, ':~').']> ',
+            \ '--prompt', 'Rg> ',
             \ '--delimiter', ':'
             \ ]
 
@@ -326,7 +326,7 @@ require("lazy").setup({
           \ call fzf#vim#files(
           \   <q-args>,
           \   extend(
-          \     {'options': ['--prompt', 'Files['.fnamemodify(<q-args>, ':~').']> ']},
+          \     {'options': ['--prompt', 'Files> ']},
           \     fzf#vim#with_preview(),
           \     'keep'
           \   ),
