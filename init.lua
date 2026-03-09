@@ -868,7 +868,7 @@ require("lazy").setup({
       })
 
       -- 全局快捷键：<Space>a 打开/关闭大纲
-      vim.keymap.set("n", "<Leader>a", "<cmd>AerialToggle!<CR>", { desc = "文件大纲 (Aerial)" })
+      -- vim.keymap.set("n", "<Leader>a", "<cmd>AerialToggle!<CR>", { desc = "文件大纲 (Aerial)" })
       
       -- 快捷键：{ 和 } 在代码中跳转到上一个/下一个符号 (类似 [[ ]])
       vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { desc = "上一个符号" })
@@ -910,7 +910,7 @@ require("lazy").setup({
 -- ==========================================================================
 -- FZF 快捷键
 keymap("n", "<Leader>o", ":Files<CR>", { silent = true, desc = "查找文件" })
-keymap("n", "<Leader>oa", ":FilesAll<CR>", { silent = true, desc = "查找所有文件（包含.gitignore排除的）" })
+keymap("n", "<Leader>a", ":FilesAll<CR>", { silent = true, desc = "查找所有文件（包含.gitignore排除的）" })
 -- <Leader>f存在组合，导致搜索面板呼出太慢，改成<Leader>s
 keymap("n", "<Leader>s", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
 keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
