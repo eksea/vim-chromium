@@ -117,6 +117,16 @@ require("lazy").setup({
     "NLKNguyen/papercolor-theme",
     priority = 1000,
     config = function()
+      -- 使用终端背景色（透明背景）
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        pattern = "*",
+        callback = function()
+          vim.cmd("highlight Normal guibg=NONE ctermbg=NONE")
+          vim.cmd("highlight NormalNC guibg=NONE ctermbg=NONE")
+          vim.cmd("highlight SignColumn guibg=NONE ctermbg=NONE")
+          vim.cmd("highlight LineNr guibg=NONE ctermbg=NONE")
+        end,
+      })
       vim.cmd("colorscheme PaperColor")
     end,
   },
@@ -486,7 +496,7 @@ require("lazy").setup({
           
           -- Blame
           map('n', '<Leader>hb', function() gs.blame_line{full=true} end, { desc = '显示完整 blame' })
-          map('n', '<Leader>tb', gs.toggle_current_line_blame, { desc = '切换行内 blame' })
+          -- map('n', '<Leader>tb', gs.toggle_current_line_blame, { desc = '切换行内 blame' })
           
           -- Diff
           map('n', '<Leader>hd', gs.diffthis, { desc = 'Diff 当前文件' })
@@ -945,11 +955,12 @@ require("lazy").setup({
 -- 5. 快捷键映射
 -- ==========================================================================
 -- FZF 快捷键
-keymap("n", "<Leader>o", ":Files<CR>", { silent = true, desc = "查找文件" })
-keymap("n", "<Leader>a", ":FilesAll<CR>", { silent = true, desc = "查找所有文件（包含.gitignore排除的）" })
+keymap("n", "<Leader>ff", ":Files<CR>", { silent = true, desc = "查找文件" })
+keymap("n", "<Leader>fa", ":FilesAll<CR>", { silent = true, desc = "查找所有文件（包含.gitignore排除的）" })
 -- <Leader>f存在组合，导致搜索面板呼出太慢，改成<Leader>s
-keymap("n", "<Leader>s", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
-keymap("n", "<Leader>b", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
+keymap("n", "<Leader>ss", ":Rg<CR>", { silent = true, desc = "全局搜索内容" })
+keymap("n", "<Leader>bb", ":Buffers<CR>", { silent = true, desc = "切换缓冲区" })
+keymap("n", "<Leader>bd", ":bdelete<CR>", { silent = true, desc = "关闭当前 buffer" })
 
 -- 在指定路径中搜索
 keymap("n", "<Leader>si", function()
