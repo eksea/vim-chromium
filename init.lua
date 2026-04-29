@@ -266,19 +266,20 @@ require("lazy").setup({
         function! s:live_grep_handler(args)
           let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
           let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
+          let history_file = stdpath('data') . '/fzf-rg-history'
 
           let spec = {}
           let spec.options = [
-            \ '--disabled',
-            \ '--query', a:args,
-            \ '--bind', 'change:reload:'.helper_script.' {q}',
+            \ '--history', history_file,
+            \ '--history-size', '200',
+            \ '--bind', 'ctrl-p:prev-history,ctrl-n:next-history,up:prev-history,down:next-history',
             \ '--preview', preview_script . ' {1} {2} {q}',
             \ '--preview-window', 'right:50%:noborder:~2',
             \ '--prompt', 'Rg> ',
             \ '--delimiter', ':'
             \ ]
 
-          call fzf#vim#grep('true', 1, spec, 0)
+          call fzf#vim#grep2(helper_script, a:args, spec, 0)
         endfunction
 
         command! -nargs=* Rg call s:live_grep_handler(<q-args>)
@@ -310,20 +311,21 @@ require("lazy").setup({
         function! s:live_grep_in_dir_handler(dir, args)
           let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf-dir.sh')
           let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
+          let history_file = stdpath('data') . '/fzf-rg-in-history'
           let search_dir = empty(a:dir) ? getcwd() : a:dir
 
           let spec = {}
           let spec.options = [
-            \ '--disabled',
-            \ '--query', a:args,
-            \ '--bind', 'change:reload:'.helper_script.' '.shellescape(search_dir).' {q}',
+            \ '--history', history_file,
+            \ '--history-size', '200',
+            \ '--bind', 'ctrl-p:prev-history,ctrl-n:next-history,up:prev-history,down:next-history',
             \ '--preview', preview_script . ' {1} {2} {q}',
             \ '--preview-window', 'right:50%:noborder:~2',
             \ '--prompt', 'Rg> ',
             \ '--delimiter', ':'
             \ ]
 
-          call fzf#vim#grep('true', 1, spec, 0)
+          call fzf#vim#grep2(helper_script . ' ' . shellescape(search_dir), a:args, spec, 0)
         endfunction
 
         command! -nargs=* -complete=dir RgIn
