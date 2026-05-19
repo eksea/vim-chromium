@@ -262,17 +262,66 @@ require("lazy").setup({
     config = function()
       vim.env.FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!.git/*"'
 
+      _G.__fzf_history_step = function(history_file, state_file, direction, current_query, reload_cmd)
+        local history_script = vim.fn.expand('~/github/vim-chromium/.vim/bin/fzf-history.py')
+        local cmd = history_script
+          .. ' ' .. vim.fn.shellescape(history_file)
+          .. ' ' .. vim.fn.shellescape(state_file)
+          .. ' ' .. direction
+          .. ' ' .. vim.fn.shellescape(current_query)
+        local next_query = vim.fn.systemlist(cmd)
+        if vim.v.shell_error ~= 0 or #next_query == 0 then
+          return 0
+        end
+        local port = 6266 + (vim.fn.getpid() % 1000)
+        local payload = 'change-query(' .. next_query[1]:gsub("'", "''") .. ')'
+        if reload_cmd ~= '' then
+          payload = payload .. '+reload(' .. reload_cmd .. ')'
+        end
+        local curl_cmd = 'curl -fsS -X POST http://127.0.0.1:' .. port .. ' --data-binary ' .. vim.fn.shellescape(payload) .. ' >/dev/null 2>&1'
+        vim.fn.system(curl_cmd)
+        return 0
+      end
+
       vim.cmd([[
+        function! s:fzf_listen_port() abort
+          return 6266 + (getpid() % 1000)
+        endfunction
+
+        function! s:fzf_change_query(query, reload_cmd) abort
+          let port = s:fzf_listen_port()
+          let escaped_query = substitute(a:query, "'", "''", 'g')
+          let payload = 'change-query(' . escaped_query . ')'
+          if !empty(a:reload_cmd)
+            let payload .= '+reload(' . a:reload_cmd . ')'
+          endif
+          call system('curl -fsS -X POST http://127.0.0.1:' . port . ' --data-binary ' . shellescape(payload) . ' >/dev/null 2>&1')
+        endfunction
+
+        function! s:fzf_history_step(history_file, state_file, direction, current_query, reload_cmd) abort
+          let history_script = expand('~/github/vim-chromium/.vim/bin/fzf-history.py')
+          let next_query = systemlist(history_script . ' ' . shellescape(a:history_file) . ' ' . shellescape(a:state_file) . ' ' . a:direction . ' ' . shellescape(a:current_query))
+          if v:shell_error || empty(next_query)
+            return
+          endif
+          call s:fzf_change_query(next_query[0], a:reload_cmd)
+        endfunction
+
         function! s:live_grep_handler(args)
           let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf.sh')
           let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
           let history_file = stdpath('data') . '/fzf-rg-history'
+          let history_state = stdpath('data') . '/fzf-rg-history-state.json'
+          let listen_port = s:fzf_listen_port()
+          let up_cmd = 'nvim --server ' . v:servername . ' --remote-expr ' . shellescape('v:lua.__fzf_history_step(''' . history_file . ''',''' . history_state . ''',''up'',''{q}'',''' . helper_script . ' {q} || true'')')
+          let down_cmd = 'nvim --server ' . v:servername . ' --remote-expr ' . shellescape('v:lua.__fzf_history_step(''' . history_file . ''',''' . history_state . ''',''down'',''{q}'',''' . helper_script . ' {q} || true'')')
 
           let spec = {}
           let spec.options = [
             \ '--history', history_file,
             \ '--history-size', '200',
-            \ '--bind', 'ctrl-p:prev-history,ctrl-n:next-history,up:prev-history,down:next-history',
+            \ '--listen', printf('%d', listen_port),
+            \ '--bind', 'up:execute-silent(' . up_cmd . '),down:execute-silent(' . down_cmd . '),ctrl-j:execute-silent(' . down_cmd . ')',
             \ '--preview', preview_script . ' {1} {2} {q}',
             \ '--preview-window', 'right:50%:noborder:~2',
             \ '--prompt', 'Rg> ',
@@ -312,13 +361,19 @@ require("lazy").setup({
           let helper_script = expand('~/github/vim-chromium/.vim/bin/rg-fzf-dir.sh')
           let preview_script = expand('~/github/vim-chromium/.vim/bin/preview.sh')
           let history_file = stdpath('data') . '/fzf-rg-in-history'
+          let history_state = stdpath('data') . '/fzf-rg-in-history-state.json'
+          let listen_port = s:fzf_listen_port()
           let search_dir = empty(a:dir) ? getcwd() : a:dir
+          let reload_cmd = helper_script . ' ' . shellescape(search_dir) . ' {q} || true'
+          let up_cmd = 'nvim --server ' . v:servername . ' --remote-expr ' . shellescape('v:lua.__fzf_history_step(''' . history_file . ''',''' . history_state . ''',''up'',''{q}'',''' . reload_cmd . ''')')
+          let down_cmd = 'nvim --server ' . v:servername . ' --remote-expr ' . shellescape('v:lua.__fzf_history_step(''' . history_file . ''',''' . history_state . ''',''down'',''{q}'',''' . reload_cmd . ''')')
 
           let spec = {}
           let spec.options = [
             \ '--history', history_file,
             \ '--history-size', '200',
-            \ '--bind', 'ctrl-p:prev-history,ctrl-n:next-history,up:prev-history,down:next-history',
+            \ '--listen', printf('%d', listen_port),
+            \ '--bind', 'up:execute-silent(' . up_cmd . '),down:execute-silent(' . down_cmd . '),ctrl-j:execute-silent(' . down_cmd . ')',
             \ '--preview', preview_script . ' {1} {2} {q}',
             \ '--preview-window', 'right:50%:noborder:~2',
             \ '--prompt', 'Rg> ',
@@ -416,8 +471,21 @@ require("lazy").setup({
         vim.keymap.set('t', '<Esc>', [[<C-\><C-n>:close<CR>]], opts)
       end
 
+      function _G.set_fzf_terminal_keymaps()
+        local function send_fzf_down_history()
+          local job = vim.b.terminal_job_id
+          if job then
+            vim.fn.chansend(job, string.char(10))
+          end
+        end
+
+        vim.keymap.set('t', '<Down>', send_fzf_down_history, { buffer = 0, silent = true })
+        vim.keymap.set('t', '<C-j>', send_fzf_down_history, { buffer = 0, silent = true })
+      end
+
       -- 自动应用快捷键到终端 buffer
       vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
+      vim.cmd('autocmd! FileType fzf lua set_fzf_terminal_keymaps()')
     end
   },
 
