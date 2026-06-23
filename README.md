@@ -254,6 +254,10 @@ hello
 
 ## 🧠 LSP / 符号导航
 
+准备compile_commands.json
+- `gn gen out/arm64_debug --export-compile-commands`
+- `ln -s out/arm64_debug/compile_commands.json .`
+
 当前配置启用：
 
 - `clangd`
